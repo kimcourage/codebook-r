@@ -1,7 +1,0 @@
-variable,label,value_code,value_label,note,minimum,maximum
-id,대상 식별번호,,,앞자리 0을 유지한 문자 식별번호,,
-cohort,집단,,,예제 집단,,
-q1_pre,첫 번째 문항,,,시점 pre,1,5
-q1_post,첫 번째 문항,,,시점 post,1,5
-q2_pre,두 번째 문항,,,시점 pre,1,5
-q2_post,두 번째 문항,,,시점 post,1,5

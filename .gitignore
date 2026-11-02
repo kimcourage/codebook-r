@@ -29,12 +29,6 @@ outputs/
 *.pdf
 *.json
 
-# Bundled synthetic examples
-!examples/synthetic_survey.csv
-!examples/synthetic_codebook.xlsx
-!examples/synthetic_panel.csv
-!examples/synthetic_panel_codebook.csv
-
 # Package resources (synthetic data only)
 !inst/examples/
 !inst/examples/**
