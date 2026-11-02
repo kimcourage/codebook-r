@@ -1,0 +1,9 @@
+^app\.R$
+^scripts$
+^distribution$
+^docs$
+^\.github$
+^.*\.Rproj$
+^install\.R$
+^CONTRIBUTING\.md$
+^examples$

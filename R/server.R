@@ -1,6 +1,5 @@
 # Shiny session state and handlers. Sourced separately for offline server tests.
 
-codebookr_app_root <- normalizePath(".")
 
 codebookr_server <- function(input, output, session) {
   dataset <- shiny::reactiveVal(NULL)
@@ -51,7 +50,7 @@ codebookr_server <- function(input, output, session) {
     consent_revision(consent_revision() + 1L)
     shiny::updateCheckboxGroupInput(session, "consent",
       choices = stats::setNames(consent_key(),
-        "전송 내용을 검토했으며 AI API 호출에 동의합니다."),
+        "\uc804\uc1a1 \ub0b4\uc6a9\uc744 \uac80\ud1a0\ud588\uc73c\uba70 AI API \ud638\ucd9c\uc5d0 \ub3d9\uc758\ud569\ub2c8\ub2e4."),
       selected = character())
   }
 
@@ -86,7 +85,7 @@ codebookr_server <- function(input, output, session) {
     shiny::updateCheckboxGroupInput(session, "approved_rules",
                                     choices = choices[visible], selected = intersect(selected, keys[visible]))
     editor <- shiny::isolate(input$edit_rule)
-    shiny::updateSelectInput(session, "edit_rule", choices = c("새 작업" = "new", choices[visible]),
+    shiny::updateSelectInput(session, "edit_rule", choices = c("\uc0c8 \uc791\uc5c5" = "new", choices[visible]),
       selected = if (length(editor) == 1L && editor %in% keys[visible]) editor else "new")
   }
 
@@ -134,7 +133,7 @@ codebookr_server <- function(input, output, session) {
   })
 
   editor_context <- shiny::reactive({
-    if (is.null(dataset())) return(list(data = NULL, error = "자료를 먼저 올려 주세요."))
+    if (is.null(dataset())) return(list(data = NULL, error = "\uc790\ub8cc\ub97c \uba3c\uc800 \uc62c\ub824 \uc8fc\uc138\uc694."))
     index <- match(input$edit_rule, rule_keys())
     before <- if (length(index) == 1L && !is.na(index)) seq_len(index - 1L) else seq_len(nrow(rules()))
     selected <- before[rule_keys()[before] %in% approved_keys()]
@@ -143,8 +142,8 @@ codebookr_server <- function(input, output, session) {
   })
   output$editor_context_status <- shiny::renderText({
     context <- editor_context()
-    if (nzchar(context$error)) return(paste("앞선 작업을 확인해 주세요:", context$error))
-    "선택한 앞선 작업의 결과를 사용합니다. 새 변수가 보이지 않으면 그 변수를 만드는 작업을 먼저 선택하세요."
+    if (nzchar(context$error)) return(paste("\uc55e\uc120 \uc791\uc5c5\uc744 \ud655\uc778\ud574 \uc8fc\uc138\uc694:", context$error))
+    "\uc120\ud0dd\ud55c \uc55e\uc120 \uc791\uc5c5\uc758 \uacb0\uacfc\ub97c \uc0ac\uc6a9\ud569\ub2c8\ub2e4. \uc0c8 \ubcc0\uc218\uac00 \ubcf4\uc774\uc9c0 \uc54a\uc73c\uba74 \uadf8 \ubcc0\uc218\ub97c \ub9cc\ub4dc\ub294 \uc791\uc5c5\uc744 \uba3c\uc800 \uc120\ud0dd\ud558\uc138\uc694."
   })
   shiny::observe({
     d <- editor_context()$data
@@ -195,11 +194,11 @@ codebookr_server <- function(input, output, session) {
       data_name(file$name[[1]])
       shiny::updateSelectInput(session, "manual_var", choices = names(d), selected = names(d)[[1]])
       rebuild_rules()
-      data_feedback("자료를 읽었습니다. 변수 이름, 자료형과 결측 코드를 확인하세요.")
-      shiny::showNotification(sprintf("원자료: %s행 × %s열", nrow(d), ncol(d)), type = "message")
+      data_feedback("\uc790\ub8cc\ub97c \uc77d\uc5c8\uc2b5\ub2c8\ub2e4. \ubcc0\uc218 \uc774\ub984, \uc790\ub8cc\ud615\uacfc \uacb0\uce21 \ucf54\ub4dc\ub97c \ud655\uc778\ud558\uc138\uc694.")
+      shiny::showNotification(sprintf("\uc6d0\uc790\ub8cc: %s\ud589 \u00d7 %s\uc5f4", nrow(d), ncol(d)), type = "message")
     }, error = function(e) {
       dataset(NULL)
-      data_feedback(paste0("자료 읽기 실패: ", error_message(e)))
+      data_feedback(paste0("\uc790\ub8cc \uc77d\uae30 \uc2e4\ud328: ", error_message(e)))
       warn(e)
     })
   }, ignoreNULL = FALSE, priority = 100)
@@ -215,13 +214,13 @@ codebookr_server <- function(input, output, session) {
       codebooks(cb)
       rebuild_rules()
       book_feedback(if (!nrow(cb$records))
-        "변수 표를 자동으로 찾지 못했습니다. 발췌문을 확인하고 AI로 정의를 읽거나 직접 작업을 추가해 주세요." else
-        "읽지 못한 부분이 있는지 확인한 뒤 코드북 검토로 넘어가세요.")
-      shiny::showNotification(sprintf("코드북 %d개 파일을 읽었습니다.",
+        "\ubcc0\uc218 \ud45c\ub97c \uc790\ub3d9\uc73c\ub85c \ucc3e\uc9c0 \ubabb\ud588\uc2b5\ub2c8\ub2e4. \ubc1c\ucdcc\ubb38\uc744 \ud655\uc778\ud558\uace0 AI\ub85c \uc815\uc758\ub97c \uc77d\uac70\ub098 \uc9c1\uc811 \uc791\uc5c5\uc744 \ucd94\uac00\ud574 \uc8fc\uc138\uc694." else
+        "\uc77d\uc9c0 \ubabb\ud55c \ubd80\ubd84\uc774 \uc788\ub294\uc9c0 \ud655\uc778\ud55c \ub4a4 \ucf54\ub4dc\ubd81 \uac80\ud1a0\ub85c \ub118\uc5b4\uac00\uc138\uc694.")
+      shiny::showNotification(sprintf("\ucf54\ub4dc\ubd81 %d\uac1c \ud30c\uc77c\uc744 \uc77d\uc5c8\uc2b5\ub2c8\ub2e4.",
                                nrow(input$book_files)), type = "message")
     }, error = function(e) {
       codebooks(NULL)
-      book_feedback(paste0("코드북 읽기 실패: ", error_message(e)))
+      book_feedback(paste0("\ucf54\ub4dc\ubd81 \uc77d\uae30 \uc2e4\ud328: ", error_message(e)))
       warn(e)
     })
   }, ignoreNULL = FALSE, priority = 100)
@@ -236,7 +235,7 @@ codebookr_server <- function(input, output, session) {
     push_undo()
     proposed <- codebook_candidates(dataset(), codebooks(), mapping())
     set_rules(append_rule_candidates(rules(), proposed, dataset()))
-    rule_feedback("새 코드북 후보를 추가했습니다. 기존 작업과 판단은 유지합니다.")
+    rule_feedback("\uc0c8 \ucf54\ub4dc\ubd81 \ud6c4\ubcf4\ub97c \ucd94\uac00\ud588\uc2b5\ub2c8\ub2e4. \uae30\uc874 \uc791\uc5c5\uacfc \ud310\ub2e8\uc740 \uc720\uc9c0\ud569\ub2c8\ub2e4.")
   }, priority = 75)
 
   shiny::observeEvent(input$edit_rule, {
@@ -288,51 +287,51 @@ codebookr_server <- function(input, output, session) {
     shiny::req(dataset())
     tryCatch({
       op <- input$manual_op
-      if (workspace_mode() == "additional" && is.null(current_base())) stop("코드북 기준 결과를 먼저 다시 확인하고 실행해 주세요.", call. = FALSE)
-      if (op == "labels") stop("라벨 정의는 변수 연결과 코드북 원문에서 확인해 주세요. 제안을 제외하거나 코드북을 고친 뒤 다시 읽을 수 있습니다.", call. = FALSE)
+      if (workspace_mode() == "additional" && is.null(current_base())) stop("\ucf54\ub4dc\ubd81 \uae30\uc900 \uacb0\uacfc\ub97c \uba3c\uc800 \ub2e4\uc2dc \ud655\uc778\ud558\uace0 \uc2e4\ud589\ud574 \uc8fc\uc138\uc694.", call. = FALSE)
+      if (op == "labels") stop("\ub77c\ubca8 \uc815\uc758\ub294 \ubcc0\uc218 \uc5f0\uacb0\uacfc \ucf54\ub4dc\ubd81 \uc6d0\ubb38\uc5d0\uc11c \ud655\uc778\ud574 \uc8fc\uc138\uc694. \uc81c\uc548\uc744 \uc81c\uc678\ud558\uac70\ub098 \ucf54\ub4dc\ubd81\uc744 \uace0\uce5c \ub4a4 \ub2e4\uc2dc \uc77d\uc744 \uc218 \uc788\uc2b5\ub2c8\ub2e4.", call. = FALSE)
       candidate <- if (op %in% research_operations) research_rule_from_inputs(input) else data.frame(
         id = 1L, variable = input$manual_var, operation = op,
         values = if (op == "set_na") trimws(input$manual_codes) else "",
         minimum = if (op == "reverse") input$manual_min else NA_real_,
         maximum = if (op == "reverse") input$manual_max else NA_real_,
-        reason = input$manual_reason, evidence = "연구자 직접 지정",
+        reason = input$manual_reason, evidence = "\uc5f0\uad6c\uc790 \uc9c1\uc811 \uc9c0\uc815",
         confidence = "manual", source = "manual", stringsAsFactors = FALSE
       )
-      if (!nzchar(trimws(candidate$reason[[1]]))) stop("변경 근거를 입력해 주세요.", call. = FALSE)
+      if (!nzchar(trimws(candidate$reason[[1]]))) stop("\ubcc0\uacbd \uadfc\uac70\ub97c \uc785\ub825\ud574 \uc8fc\uc138\uc694.", call. = FALSE)
       context <- editor_context()
-      if (nzchar(context$error)) stop(paste("앞선 작업을 먼저 수정해 주세요:", context$error), call. = FALSE)
+      if (nzchar(context$error)) stop(paste("\uc55e\uc120 \uc791\uc5c5\uc744 \uba3c\uc800 \uc218\uc815\ud574 \uc8fc\uc138\uc694:", context$error), call. = FALSE)
       check_rule(candidate, context$data)
       editor <- input$edit_rule
       if (length(editor) == 1L && !identical(editor, "new")) {
         index <- match(editor, rule_keys())
-        if (is.na(index) || !rules()$id[[index]] %in% active_rule_ids()) stop("목록에서 기존 규칙을 다시 선택해 주세요.", call. = FALSE)
+        if (is.na(index) || !rules()$id[[index]] %in% active_rule_ids()) stop("\ubaa9\ub85d\uc5d0\uc11c \uae30\uc874 \uaddc\uce59\uc744 \ub2e4\uc2dc \uc120\ud0dd\ud574 \uc8fc\uc138\uc694.", call. = FALSE)
         push_undo()
         updated <- edit_rule_candidate(rules(), match(editor, rule_keys()), candidate, context$data)
         set_rules(updated)
-        rule_feedback("작업을 수정했습니다. 이 작업과 영향을 받는 작업을 다시 선택하고 결과를 확인하세요.")
+        rule_feedback("\uc791\uc5c5\uc744 \uc218\uc815\ud588\uc2b5\ub2c8\ub2e4. \uc774 \uc791\uc5c5\uacfc \uc601\ud5a5\uc744 \ubc1b\ub294 \uc791\uc5c5\uc744 \ub2e4\uc2dc \uc120\ud0dd\ud558\uace0 \uacb0\uacfc\ub97c \ud655\uc778\ud558\uc138\uc694.")
         return(invisible(NULL))
       }
       updated <- append_rule_candidates(rules(), candidate, context$data)
       if (nrow(updated) == nrow(rules())) {
-        rule_feedback("동일한 규칙이 이미 존재합니다.")
-        shiny::showNotification("동일한 규칙이 이미 존재합니다.", type = "warning")
+        rule_feedback("\ub3d9\uc77c\ud55c \uaddc\uce59\uc774 \uc774\ubbf8 \uc874\uc7ac\ud569\ub2c8\ub2e4.")
+        shiny::showNotification("\ub3d9\uc77c\ud55c \uaddc\uce59\uc774 \uc774\ubbf8 \uc874\uc7ac\ud569\ub2c8\ub2e4.", type = "warning")
       } else {
         push_undo()
         if (workspace_mode() == "additional") additional_ids(union(additional_ids(), setdiff(updated$id, rules()$id)))
         set_rules(updated)
-        rule_feedback("작업을 추가했습니다. 목록에서 선택하면 결과를 미리 볼 수 있습니다.")
-        shiny::showNotification("작업을 추가했습니다.")
+        rule_feedback("\uc791\uc5c5\uc744 \ucd94\uac00\ud588\uc2b5\ub2c8\ub2e4. \ubaa9\ub85d\uc5d0\uc11c \uc120\ud0dd\ud558\uba74 \uacb0\uacfc\ub97c \ubbf8\ub9ac \ubcfc \uc218 \uc788\uc2b5\ub2c8\ub2e4.")
+        shiny::showNotification("\uc791\uc5c5\uc744 \ucd94\uac00\ud588\uc2b5\ub2c8\ub2e4.")
       }
     }, error = function(e) {
-      rule_feedback(paste0("작업을 저장하지 못했습니다: ", error_message(e)))
+      rule_feedback(paste0("\uc791\uc5c5\uc744 \uc800\uc7a5\ud558\uc9c0 \ubabb\ud588\uc2b5\ub2c8\ub2e4: ", error_message(e)))
       warn(e)
     })
   })
 
   selected_editor_index <- function() {
     index <- match(input$edit_rule, rule_keys())
-    if (length(index) != 1L || is.na(index)) stop("목록에서 기존 규칙을 다시 선택해 주세요.", call. = FALSE)
-    if (!rules()$id[[index]] %in% active_rule_ids()) stop("현재 단계의 작업을 선택해 주세요.", call. = FALSE)
+    if (length(index) != 1L || is.na(index)) stop("\ubaa9\ub85d\uc5d0\uc11c \uae30\uc874 \uaddc\uce59\uc744 \ub2e4\uc2dc \uc120\ud0dd\ud574 \uc8fc\uc138\uc694.", call. = FALSE)
+    if (!rules()$id[[index]] %in% active_rule_ids()) stop("\ud604\uc7ac \ub2e8\uacc4\uc758 \uc791\uc5c5\uc744 \uc120\ud0dd\ud574 \uc8fc\uc138\uc694.", call. = FALSE)
     index
   }
   shiny::observeEvent(input$delete_rule, {
@@ -340,7 +339,7 @@ codebookr_server <- function(input, output, session) {
       index <- selected_editor_index()
       push_undo()
       set_rules(rules()[-index, , drop = FALSE])
-      rule_feedback("작업을 삭제했습니다. 원자료는 그대로입니다.")
+      rule_feedback("\uc791\uc5c5\uc744 \uc0ad\uc81c\ud588\uc2b5\ub2c8\ub2e4. \uc6d0\uc790\ub8cc\ub294 \uadf8\ub300\ub85c\uc785\ub2c8\ub2e4.")
     }, error = function(e) rule_feedback(error_message(e)))
   })
   move_rule <- function(direction) {
@@ -352,7 +351,7 @@ codebookr_server <- function(input, output, session) {
       order <- seq_len(nrow(rules()))
       order[c(index, target)] <- order[c(target, index)]
       set_rules(rules()[order, , drop = FALSE], reset_approval = TRUE)
-      rule_feedback("순서를 바꿨습니다. 작업을 다시 선택하고 결과를 확인하세요.")
+      rule_feedback("\uc21c\uc11c\ub97c \ubc14\uafe8\uc2b5\ub2c8\ub2e4. \uc791\uc5c5\uc744 \ub2e4\uc2dc \uc120\ud0dd\ud558\uace0 \uacb0\uacfc\ub97c \ud655\uc778\ud558\uc138\uc694.")
     }, error = function(e) rule_feedback(error_message(e)))
   }
   shiny::observeEvent(input$move_rule_up, move_rule(-1L))
@@ -361,19 +360,19 @@ codebookr_server <- function(input, output, session) {
   shiny::observeEvent(input$ai_button, {
     shiny::req(dataset(), codebooks())
     if (!identical(as.character(input$consent), consent_key())) {
-      ai_status("코드북 전송 내용을 확인하고 동의에 체크해 주세요.")
-      shiny::showNotification("코드북 전송 내용을 확인하고 동의에 체크해 주세요.",
+      ai_status("\ucf54\ub4dc\ubd81 \uc804\uc1a1 \ub0b4\uc6a9\uc744 \ud655\uc778\ud558\uace0 \ub3d9\uc758\uc5d0 \uccb4\ud06c\ud574 \uc8fc\uc138\uc694.")
+      shiny::showNotification("\ucf54\ub4dc\ubd81 \uc804\uc1a1 \ub0b4\uc6a9\uc744 \ud655\uc778\ud558\uace0 \ub3d9\uc758\uc5d0 \uccb4\ud06c\ud574 \uc8fc\uc138\uc694.",
                        type = "warning", duration = 8)
       return(invisible(NULL))
     }
     if (!nzchar(trimws(input$api_key))) {
-      ai_status("본인의 API 키를 입력해 주세요.")
-      shiny::showNotification("본인의 API 키를 입력해 주세요.", type = "warning")
+      ai_status("\ubcf8\uc778\uc758 API \ud0a4\ub97c \uc785\ub825\ud574 \uc8fc\uc138\uc694.")
+      shiny::showNotification("\ubcf8\uc778\uc758 API \ud0a4\ub97c \uc785\ub825\ud574 \uc8fc\uc138\uc694.", type = "warning")
       return(invisible(NULL))
     }
     tryCatch({
-      ai_status("AI가 코드북을 해석하고 있습니다...")
-      shiny::withProgress(message = "AI가 코드북을 해석하고 있습니다...", value = 0, {
+      ai_status("AI\uac00 \ucf54\ub4dc\ubd81\uc744 \ud574\uc11d\ud558\uace0 \uc788\uc2b5\ub2c8\ub2e4...")
+      shiny::withProgress(message = "AI\uac00 \ucf54\ub4dc\ubd81\uc744 \ud574\uc11d\ud558\uace0 \uc788\uc2b5\ub2c8\ub2e4...", value = 0, {
         proposed <- propose_ai_rules(dataset(), codebooks(), input$provider,
                                      input$api_key, input$model)
         extracted <- attr(proposed, "definitions")
@@ -391,18 +390,18 @@ codebookr_server <- function(input, output, session) {
         updated <- append_rule_candidates(updated, proposed, dataset())
         n_added <- nrow(updated) - nrow(rules())
         if (n_added > 0L) set_rules(updated)
-        ai_status(sprintf("AI 응답 완료: 후보 %d개 중 새 규칙 %d개 추가. 기존과 중복되거나 유효하지 않은 후보는 추가하지 않습니다. 새 규칙은 승인이 필요합니다.",
+        ai_status(sprintf("AI \uc751\ub2f5 \uc644\ub8cc: \ud6c4\ubcf4 %d\uac1c \uc911 \uc0c8 \uaddc\uce59 %d\uac1c \ucd94\uac00. \uae30\uc874\uacfc \uc911\ubcf5\ub418\uac70\ub098 \uc720\ud6a8\ud558\uc9c0 \uc54a\uc740 \ud6c4\ubcf4\ub294 \ucd94\uac00\ud558\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4. \uc0c8 \uaddc\uce59\uc740 \uc2b9\uc778\uc774 \ud544\uc694\ud569\ub2c8\ub2e4.",
                           nrow(proposed), n_added))
-        if (!is.null(extracted)) ai_status(paste(ai_status(), sprintf("원문 확인된 정의 %d개, 원문을 확인하지 못해 제외한 정의 %d개.", nrow(extracted), if (is.null(rejected)) 0L else rejected)))
+        if (!is.null(extracted)) ai_status(paste(ai_status(), sprintf("\uc6d0\ubb38 \ud655\uc778\ub41c \uc815\uc758 %d\uac1c, \uc6d0\ubb38\uc744 \ud655\uc778\ud558\uc9c0 \ubabb\ud574 \uc81c\uc678\ud55c \uc815\uc758 %d\uac1c.", nrow(extracted), if (is.null(rejected)) 0L else rejected)))
         shiny::showNotification(ai_status(), duration = 10)
       })
     }, error = function(e) {
       message <- error_message(e, input$api_key)
-      help <- if (grepl("401|authentication|invalid.*key", message, ignore.case = TRUE)) " API 키와 제공업체를 확인한 뒤 다시 요청해 주세요." else
-        if (grepl("429|rate.limit", message, ignore.case = TRUE)) " 호출 한도와 잔액을 확인하고 잠시 후 재시도해 주세요." else
-        if (grepl("404|model.*not", message, ignore.case = TRUE)) " 제공업체에서 이용 가능한 모델 ID를 확인해 주세요." else
-        " 입력 내용과 연결 상태를 확인한 뒤 다시 요청할 수 있습니다."
-      ai_status(paste0("AI 요청 실패: ", message, help))
+      help <- if (grepl("401|authentication|invalid.*key", message, ignore.case = TRUE)) " API \ud0a4\uc640 \uc81c\uacf5\uc5c5\uccb4\ub97c \ud655\uc778\ud55c \ub4a4 \ub2e4\uc2dc \uc694\uccad\ud574 \uc8fc\uc138\uc694." else
+        if (grepl("429|rate.limit", message, ignore.case = TRUE)) " \ud638\ucd9c \ud55c\ub3c4\uc640 \uc794\uc561\uc744 \ud655\uc778\ud558\uace0 \uc7a0\uc2dc \ud6c4 \uc7ac\uc2dc\ub3c4\ud574 \uc8fc\uc138\uc694." else
+        if (grepl("404|model.*not", message, ignore.case = TRUE)) " \uc81c\uacf5\uc5c5\uccb4\uc5d0\uc11c \uc774\uc6a9 \uac00\ub2a5\ud55c \ubaa8\ub378 ID\ub97c \ud655\uc778\ud574 \uc8fc\uc138\uc694." else
+        " \uc785\ub825 \ub0b4\uc6a9\uacfc \uc5f0\uacb0 \uc0c1\ud0dc\ub97c \ud655\uc778\ud55c \ub4a4 \ub2e4\uc2dc \uc694\uccad\ud560 \uc218 \uc788\uc2b5\ub2c8\ub2e4."
+      ai_status(paste0("AI \uc694\uccad \uc2e4\ud328: ", message, help))
       warn(e, input$api_key)
     })
   })
@@ -413,18 +412,18 @@ codebookr_server <- function(input, output, session) {
   output$rule_feedback <- shiny::renderText(rule_feedback())
   preview_description <- shiny::reactive({
     count <- nrow(selected_rules())
-    if (!count) return("실행할 작업을 선택하면 예상 결과가 나타납니다.")
+    if (!count) return("\uc2e4\ud589\ud560 \uc791\uc5c5\uc744 \uc120\ud0dd\ud558\uba74 \uc608\uc0c1 \uacb0\uacfc\uac00 \ub098\ud0c0\ub0a9\ub2c8\ub2e4.")
     p <- plan_preview()
-    if (!p$ok) return(paste0("먼저 이 부분을 수정해 주세요. ", p$error))
-    sprintf("선택한 %d개 작업의 예상 결과입니다. 문제가 없으면 아래에서 적용하세요.", count)
+    if (!p$ok) return(paste0("\uba3c\uc800 \uc774 \ubd80\ubd84\uc744 \uc218\uc815\ud574 \uc8fc\uc138\uc694. ", p$error))
+    sprintf("\uc120\ud0dd\ud55c %d\uac1c \uc791\uc5c5\uc758 \uc608\uc0c1 \uacb0\uacfc\uc785\ub2c8\ub2e4. \ubb38\uc81c\uac00 \uc5c6\uc73c\uba74 \uc544\ub798\uc5d0\uc11c \uc801\uc6a9\ud558\uc138\uc694.", count)
   })
   output$preview_status <- shiny::renderText(preview_description())
   output$execution_plan_summary <- shiny::renderText(sub(
-    "문제가 없으면 아래에서 적용하세요.",
-    "아래 버튼을 누르면 선택한 작업을 승인하고 실행합니다.",
+    "\ubb38\uc81c\uac00 \uc5c6\uc73c\uba74 \uc544\ub798\uc5d0\uc11c \uc801\uc6a9\ud558\uc138\uc694.",
+    "\uc544\ub798 \ubc84\ud2bc\uc744 \ub204\ub974\uba74 \uc120\ud0dd\ud55c \uc791\uc5c5\uc744 \uc2b9\uc778\ud558\uace0 \uc2e4\ud589\ud569\ub2c8\ub2e4.",
     preview_description(), fixed = TRUE))
   shiny::observeEvent(input$go_codebook, {
-    if (is.null(dataset()) || is.null(codebooks())) { mapping_feedback("원자료와 코드북을 모두 연결해 주세요."); return() }
+    if (is.null(dataset()) || is.null(codebooks())) { mapping_feedback("\uc6d0\uc790\ub8cc\uc640 \ucf54\ub4dc\ubd81\uc744 \ubaa8\ub450 \uc5f0\uacb0\ud574 \uc8fc\uc138\uc694."); return() }
     workspace_mode("codebook"); set_rules(rules())
     shiny::updateTabsetPanel(session, "main_tabs", selected = "codebook")
   })
@@ -435,8 +434,8 @@ codebookr_server <- function(input, output, session) {
 
   output$dataset_status <- shiny::renderText({
     d <- dataset()
-    if (is.null(d)) return("원자료를 올려 주세요.")
-    sprintf("%s (%s행, 변수 %s개)", data_name(), nrow(d), ncol(d))
+    if (is.null(d)) return("\uc6d0\uc790\ub8cc\ub97c \uc62c\ub824 \uc8fc\uc138\uc694.")
+    sprintf("%s (%s\ud589, \ubcc0\uc218 %s\uac1c)", data_name(), nrow(d), ncol(d))
   })
   output$metadata_table <- shiny::renderTable({
     shiny::req(dataset())
@@ -446,8 +445,8 @@ codebookr_server <- function(input, output, session) {
   output$book_summary <- shiny::renderTable({
     shiny::req(codebooks())
     x <- codebooks()$summary
-    x$recognized <- ifelse(x$recognized, "인식됨", "직접 확인 필요")
-    names(x) <- c("파일", "시트 또는 구간", "표 인식", "변수 수", "확인사항")
+    x$recognized <- ifelse(x$recognized, "\uc778\uc2dd\ub428", "\uc9c1\uc811 \ud655\uc778 \ud544\uc694")
+    names(x) <- c("\ud30c\uc77c", "\uc2dc\ud2b8 \ub610\ub294 \uad6c\uac04", "\ud45c \uc778\uc2dd", "\ubcc0\uc218 \uc218", "\ud655\uc778\uc0ac\ud56d")
     x
   }, striped = TRUE, rownames = FALSE)
   output$book_excerpts <- shiny::renderText({
@@ -459,7 +458,7 @@ codebookr_server <- function(input, output, session) {
     shiny::req(codebooks())
     x <- head(codebooks()$records, 35L)
     x <- x[c("variable", "label", "value_code", "value_label", "note", "source_file", "source_loc")]
-    names(x) <- c("변수", "설명", "코드", "값 설명", "비고", "파일", "문서 위치")
+    names(x) <- c("\ubcc0\uc218", "\uc124\uba85", "\ucf54\ub4dc", "\uac12 \uc124\uba85", "\ube44\uace0", "\ud30c\uc77c", "\ubb38\uc11c \uc704\uce58")
     x
   }, striped = TRUE, rownames = FALSE)
   output$payload_preview <- shiny::renderText({
@@ -487,10 +486,10 @@ codebookr_server <- function(input, output, session) {
   shiny::observeEvent(input$run_button, {
     shiny::req(dataset())
     tryCatch({
-      if (is.null(codebooks())) stop("코드북을 먼저 연결해 주세요.", call. = FALSE)
-      if (workspace_mode() == "additional" && is.null(current_base())) stop("코드북 기준 결과가 바뀌었습니다. 기본 처리를 먼저 다시 실행해 주세요.", call. = FALSE)
+      if (is.null(codebooks())) stop("\ucf54\ub4dc\ubd81\uc744 \uba3c\uc800 \uc5f0\uacb0\ud574 \uc8fc\uc138\uc694.", call. = FALSE)
+      if (workspace_mode() == "additional" && is.null(current_base())) stop("\ucf54\ub4dc\ubd81 \uae30\uc900 \uacb0\uacfc\uac00 \ubc14\ub00c\uc5c8\uc2b5\ub2c8\ub2e4. \uae30\ubcf8 \ucc98\ub9ac\ub97c \uba3c\uc800 \ub2e4\uc2dc \uc2e4\ud589\ud574 \uc8fc\uc138\uc694.", call. = FALSE)
       approved <- selected_rules()
-      if (!nrow(approved)) stop("실행할 작업을 하나 이상 선택해 주세요.", call. = FALSE)
+      if (!nrow(approved)) stop("\uc2e4\ud589\ud560 \uc791\uc5c5\uc744 \ud558\ub098 \uc774\uc0c1 \uc120\ud0dd\ud574 \uc8fc\uc138\uc694.", call. = FALSE)
       # Apply the displayed row order, independent of stable display IDs.
       applied <- apply_approved_rules(dataset(), approved)
       # Verify generated standalone script can be constructed before marking success.
@@ -504,18 +503,18 @@ codebookr_server <- function(input, output, session) {
       if (workspace_mode() == "codebook") base_result(result())
       shiny::updateTabsetPanel(session, "main_tabs", selected = "execute")
       execution_feedback("")
-      shiny::showNotification("승인한 전처리 규칙이 적용되었습니다.", type = "message")
+      shiny::showNotification("\uc2b9\uc778\ud55c \uc804\ucc98\ub9ac \uaddc\uce59\uc774 \uc801\uc6a9\ub418\uc5c8\uc2b5\ub2c8\ub2e4.", type = "message")
     }, error = function(e) {
       result(NULL)
-      execution_feedback(paste0("실행을 중단했습니다: ", error_message(e)))
+      execution_feedback(paste0("\uc2e4\ud589\uc744 \uc911\ub2e8\ud588\uc2b5\ub2c8\ub2e4: ", error_message(e)))
       warn(e)
     })
   })
 
   output$run_status <- shiny::renderText({
     x <- current_result()
-    if (is.null(x)) return(if (nzchar(execution_feedback())) execution_feedback() else "실행 결과가 없습니다. 작업을 선택하고 미리보기를 확인한 뒤 실행해 주세요.")
-    sprintf("%d개 작업을 실행했습니다. 결과는 %d행, %d열입니다.",
+    if (is.null(x)) return(if (nzchar(execution_feedback())) execution_feedback() else "\uc2e4\ud589 \uacb0\uacfc\uac00 \uc5c6\uc2b5\ub2c8\ub2e4. \uc791\uc5c5\uc744 \uc120\ud0dd\ud558\uace0 \ubbf8\ub9ac\ubcf4\uae30\ub97c \ud655\uc778\ud55c \ub4a4 \uc2e4\ud589\ud574 \uc8fc\uc138\uc694.")
+    sprintf("%d\uac1c \uc791\uc5c5\uc744 \uc2e4\ud589\ud588\uc2b5\ub2c8\ub2e4. \uacb0\uacfc\ub294 %d\ud589, %d\uc5f4\uc785\ub2c8\ub2e4.",
             nrow(x$approved), nrow(x$applied$data), ncol(x$applied$data))
   })
   output$audit_table <- shiny::renderTable({
@@ -523,7 +522,7 @@ codebookr_server <- function(input, output, session) {
     x <- current_result()$applied$audit
     x <- x[c("id", "variable", "operation", "n_affected", "missing_before", "missing_after", "rows_before", "rows_after", "note")]
     x$operation <- operation_label(x$operation)
-    names(x) <- c("번호", "변수", "작업", "적용 수", "결측 수 (전)", "결측 수 (후)", "행 수 (전)", "행 수 (후)", "계산 기준")
+    names(x) <- c("\ubc88\ud638", "\ubcc0\uc218", "\uc791\uc5c5", "\uc801\uc6a9 \uc218", "\uacb0\uce21 \uc218 (\uc804)", "\uacb0\uce21 \uc218 (\ud6c4)", "\ud589 \uc218 (\uc804)", "\ud589 \uc218 (\ud6c4)", "\uacc4\uc0b0 \uae30\uc900")
     x
   }, striped = TRUE, rownames = FALSE)
   output$after_metadata <- shiny::renderTable({
@@ -533,9 +532,9 @@ codebookr_server <- function(input, output, session) {
   output$download_controls <- shiny::renderUI({
     if (is.null(current_result())) {
       return(shiny::tags$p(class = "hint",
-        "규칙을 승인하고 실행하면 ZIP을 다운로드할 수 있습니다."))
+        "\uaddc\uce59\uc744 \uc2b9\uc778\ud558\uace0 \uc2e4\ud589\ud558\uba74 ZIP\uc744 \ub2e4\uc6b4\ub85c\ub4dc\ud560 \uc218 \uc788\uc2b5\ub2c8\ub2e4."))
     }
-    shiny::downloadButton("download_bundle", if (workspace_mode() == "additional") "추가 작업 포함 ZIP" else "결과 다운로드 (ZIP)")
+    shiny::downloadButton("download_bundle", if (workspace_mode() == "additional") "\ucd94\uac00 \uc791\uc5c5 \ud3ec\ud568 ZIP" else "\uacb0\uacfc \ub2e4\uc6b4\ub85c\ub4dc (ZIP)")
   })
   output$download_bundle <- shiny::downloadHandler(
     filename = function() sprintf("codebookr-results-%s.zip", format(Sys.Date(), "%Y%m%d")),
@@ -547,6 +546,6 @@ codebookr_server <- function(input, output, session) {
     },
     contentType = "application/zip"
   )
-  eval(body(codebookr_review_bindings), envir = environment())
+  eval(codebookr_review_bindings, envir = environment())
 }
 

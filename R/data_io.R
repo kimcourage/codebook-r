@@ -2,7 +2,7 @@
 
 normalize_import_options <- function(csv_encoding = "UTF-8", character_columns = character()) {
   if (!csv_encoding %in% c("UTF-8", "CP949", "EUC-KR")) {
-    stop("CSV 문자 인코딩은 UTF-8, CP949, EUC-KR 중에서 선택해 주세요.", call. = FALSE)
+    stop("CSV \ubb38\uc790 \uc778\ucf54\ub529\uc740 UTF-8, CP949, EUC-KR \uc911\uc5d0\uc11c \uc120\ud0dd\ud574 \uc8fc\uc138\uc694.", call. = FALSE)
   }
   character_columns <- unique(trimws(as.character(character_columns)))
   list(csv_encoding = csv_encoding, character_columns = character_columns[nzchar(character_columns)])
@@ -10,7 +10,7 @@ normalize_import_options <- function(csv_encoding = "UTF-8", character_columns =
 
 read_dataset <- function(path, original_name = basename(path), csv_encoding = "UTF-8",
                          character_columns = character()) {
-  if (!file.exists(path)) stop("데이터 파일을 찾을 수 없습니다.", call. = FALSE)
+  if (!file.exists(path)) stop("\ub370\uc774\ud130 \ud30c\uc77c\uc744 \ucc3e\uc744 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4.", call. = FALSE)
   options <- normalize_import_options(csv_encoding, character_columns)
   ext <- tolower(tools::file_ext(original_name))
   read_csv_safely <- function() {
@@ -21,17 +21,17 @@ read_dataset <- function(path, original_name = basename(path), csv_encoding = "U
       show_col_types = FALSE, progress = FALSE)
     problems <- readr::problems(raw)
     if (nrow(problems)) stop(sprintf(
-      "CSV 구조 오류 %d건이 있습니다. 따옴표, 열 개수와 인코딩을 확인한 뒤 다시 읽어 주세요.",
+      "CSV \uad6c\uc870 \uc624\ub958 %d\uac74\uc774 \uc788\uc2b5\ub2c8\ub2e4. \ub530\uc634\ud45c, \uc5f4 \uac1c\uc218\uc640 \uc778\ucf54\ub529\uc744 \ud655\uc778\ud55c \ub4a4 \ub2e4\uc2dc \uc77d\uc5b4 \uc8fc\uc138\uc694.",
       nrow(problems)), call. = FALSE)
     if (anyNA(names(raw)) || any(!nzchar(names(raw))) || anyDuplicated(names(raw))) {
-      stop("변수명이 비어 있거나 중복되어 있습니다. 원자료에서 수정해 주세요.", call. = FALSE)
+      stop("\ubcc0\uc218\uba85\uc774 \ube44\uc5b4 \uc788\uac70\ub098 \uc911\ubcf5\ub418\uc5b4 \uc788\uc2b5\ub2c8\ub2e4. \uc6d0\uc790\ub8cc\uc5d0\uc11c \uc218\uc815\ud574 \uc8fc\uc138\uc694.", call. = FALSE)
     }
     strings <- c(names(raw), unlist(raw, use.names = FALSE))
     if (any(!is.na(strings) & is.na(iconv(strings, from = "UTF-8", to = "UTF-8", sub = NA)))) {
-      stop("CSV 한글 인코딩을 읽지 못했습니다. 읽기 옵션에서 CP949 또는 EUC-KR을 선택해 주세요.", call. = FALSE)
+      stop("CSV \ud55c\uae00 \uc778\ucf54\ub529\uc744 \uc77d\uc9c0 \ubabb\ud588\uc2b5\ub2c8\ub2e4. \uc77d\uae30 \uc635\uc158\uc5d0\uc11c CP949 \ub610\ub294 EUC-KR\uc744 \uc120\ud0dd\ud574 \uc8fc\uc138\uc694.", call. = FALSE)
     }
     absent <- setdiff(options$character_columns, names(raw))
-    if (length(absent)) stop(paste("문자로 읽을 변수명이 없습니다:", paste(absent, collapse = ", ")),
+    if (length(absent)) stop(paste("\ubb38\uc790\ub85c \uc77d\uc744 \ubcc0\uc218\uba85\uc774 \uc5c6\uc2b5\ub2c8\ub2e4:", paste(absent, collapse = ", ")),
                             call. = FALSE)
     protected <- names(raw)[vapply(raw, function(x) any(
       grepl("^[+-]?0[0-9]+$|^[+-]?[0-9]{16,}$", x), na.rm = TRUE), logical(1))]
@@ -46,17 +46,17 @@ read_dataset <- function(path, original_name = basename(path), csv_encoding = "U
     sav = as.data.frame(haven::read_sav(path, user_na = TRUE, .name_repair = "minimal")),
     dta = as.data.frame(haven::read_dta(path, .name_repair = "minimal")),
     rds = readRDS(path),
-    stop(sprintf("지원하지 않는 데이터 형식: .%s", ext), call. = FALSE)
+    stop(sprintf("\uc9c0\uc6d0\ud558\uc9c0 \uc54a\ub294 \ub370\uc774\ud130 \ud615\uc2dd: .%s", ext), call. = FALSE)
   )
-  if (!is.data.frame(data)) stop("RDS 파일에는 data.frame이 들어 있어야 합니다.", call. = FALSE)
+  if (!is.data.frame(data)) stop("RDS \ud30c\uc77c\uc5d0\ub294 data.frame\uc774 \ub4e4\uc5b4 \uc788\uc5b4\uc57c \ud569\ub2c8\ub2e4.", call. = FALSE)
   data <- as.data.frame(data)  # Avoid by-reference semantics from e.g. data.table RDS.
-  if (!ncol(data)) stop("열이 없는 데이터셋입니다.", call. = FALSE)
+  if (!ncol(data)) stop("\uc5f4\uc774 \uc5c6\ub294 \ub370\uc774\ud130\uc14b\uc785\ub2c8\ub2e4.", call. = FALSE)
   nms <- names(data)
   if (anyNA(nms) || any(!nzchar(nms)) || anyDuplicated(nms)) {
-    stop("변수명이 비어 있거나 중복되어 있습니다. 원자료에서 수정해 주세요.", call. = FALSE)
+    stop("\ubcc0\uc218\uba85\uc774 \ube44\uc5b4 \uc788\uac70\ub098 \uc911\ubcf5\ub418\uc5b4 \uc788\uc2b5\ub2c8\ub2e4. \uc6d0\uc790\ub8cc\uc5d0\uc11c \uc218\uc815\ud574 \uc8fc\uc138\uc694.", call. = FALSE)
   }
   unsupported <- nms[vapply(data, function(x) !is.atomic(x) || !is.null(dim(x)), logical(1))]
-  if (length(unsupported)) stop(paste("목록·행렬 형태의 열은 지원하지 않습니다:",
+  if (length(unsupported)) stop(paste("\ubaa9\ub85d\u00b7\ud589\ub82c \ud615\ud0dc\uc758 \uc5f4\uc740 \uc9c0\uc6d0\ud558\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4:",
                                       paste(unsupported, collapse = ", ")), call. = FALSE)
   data
 }
@@ -71,7 +71,7 @@ variable_metadata <- function(data) {
     if (is.null(lab) || length(lab) != 1L) lab <- ""
     labels <- attr(x, "labels", exact = TRUE)
     value_labels <- if (length(labels)) paste(head(paste0(unname(labels), "=", names(labels)), 20L), collapse = "; ") else ""
-    if (length(labels) > 20L) value_labels <- paste0(value_labels, "; … (총 ", length(labels), "개)")
+    if (length(labels) > 20L) value_labels <- paste0(value_labels, "; \u2026 (\ucd1d ", length(labels), "\uac1c)")
     user_missing <- c(attr(x, "na_values", exact = TRUE), attr(x, "na_range", exact = TRUE))
     data.frame(
       variable = nm,
@@ -88,7 +88,7 @@ variable_metadata <- function(data) {
 
 metadata_display <- function(data) {
   x <- variable_metadata(data)
-  names(x) <- c("변수", "자료형", "변수 설명", "값 라벨 (최대 20개)", "지정 결측값", "결측 수", "결측률 (%)")
+  names(x) <- c("\ubcc0\uc218", "\uc790\ub8cc\ud615", "\ubcc0\uc218 \uc124\uba85", "\uac12 \ub77c\ubca8 (\ucd5c\ub300 20\uac1c)", "\uc9c0\uc815 \uacb0\uce21\uac12", "\uacb0\uce21 \uc218", "\uacb0\uce21\ub960 (%)")
   x
 }
 

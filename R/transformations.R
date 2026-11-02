@@ -25,25 +25,25 @@ encode_parameters <- function(x) {
 rule_parameters <- function(rule) {
   rule <- normalize_rules(rule)
   if (length(rule$schema_version) != 1L || is.na(rule$schema_version) ||
-      !rule$schema_version %in% c(1L, 2L)) stop("지원하지 않는 작업 형식입니다.", call. = FALSE)
+      !rule$schema_version %in% c(1L, 2L)) stop("\uc9c0\uc6d0\ud558\uc9c0 \uc54a\ub294 \uc791\uc5c5 \ud615\uc2dd\uc785\ub2c8\ub2e4.", call. = FALSE)
   if (!rule$operation[[1]] %in% research_operations) return(list())
-  if (rule$schema_version != 2L) stop("새 작업의 설정 형식이 맞지 않습니다.", call. = FALSE)
+  if (rule$schema_version != 2L) stop("\uc0c8 \uc791\uc5c5\uc758 \uc124\uc815 \ud615\uc2dd\uc774 \ub9de\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4.", call. = FALSE)
   p <- tryCatch(jsonlite::fromJSON(rule$parameters[[1]], simplifyVector = TRUE), error = function(e) NULL)
-  if (!is.list(p)) stop("작업 설정을 읽을 수 없습니다.", call. = FALSE)
+  if (!is.list(p)) stop("\uc791\uc5c5 \uc124\uc815\uc744 \uc77d\uc744 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4.", call. = FALSE)
   p
 }
 
 new_research_rule <- function(operation, parameters, reason, id = 1L) {
-  target <- if (operation %in% c("long", "wide")) "자료 전체" else parameters$output
+  target <- if (operation %in% c("long", "wide")) "\uc790\ub8cc \uc804\uccb4" else parameters$output
   data.frame(id = as.integer(id), variable = target, operation = operation, values = "",
-    minimum = NA_real_, maximum = NA_real_, reason = reason, evidence = "연구자 지정",
+    minimum = NA_real_, maximum = NA_real_, reason = reason, evidence = "\uc5f0\uad6c\uc790 \uc9c0\uc815",
     confidence = "manual", source = "manual", schema_version = 2L,
     parameters = encode_parameters(parameters), stringsAsFactors = FALSE)
 }
 
 require_text <- function(x, label) {
   if (length(x) != 1L || !is.character(x) || is.na(x) || !nzchar(trimws(x)) || grepl("[\r\n\t]", x)) {
-    stop(paste0(label, "을(를) 입력해 주세요."), call. = FALSE)
+    stop(paste0(label, "\uc744(\ub97c) \uc785\ub825\ud574 \uc8fc\uc138\uc694."), call. = FALSE)
   }
   x
 }
@@ -51,68 +51,68 @@ require_columns <- function(data, columns, label, empty = FALSE) {
   if (is.null(columns)) columns <- character()
   if (!is.character(columns) || anyNA(columns) || anyDuplicated(columns) ||
       (!empty && !length(columns)) || any(!columns %in% names(data))) {
-    stop(paste0(label, ": 앞선 작업 결과에 있는 변수를 선택해 주세요."), call. = FALSE)
+    stop(paste0(label, ": \uc55e\uc120 \uc791\uc5c5 \uacb0\uacfc\uc5d0 \uc788\ub294 \ubcc0\uc218\ub97c \uc120\ud0dd\ud574 \uc8fc\uc138\uc694."), call. = FALSE)
   }
   columns
 }
 new_column <- function(data, name) {
-  require_text(name, "새 변수 이름")
-  if (name %in% names(data)) stop(paste0("이미 있는 변수 이름입니다: ", name), call. = FALSE)
+  require_text(name, "\uc0c8 \ubcc0\uc218 \uc774\ub984")
+  if (name %in% names(data)) stop(paste0("\uc774\ubbf8 \uc788\ub294 \ubcc0\uc218 \uc774\ub984\uc785\ub2c8\ub2e4: ", name), call. = FALSE)
 }
 plain_numeric <- function(x, name) {
   if (!is.numeric(x) || is.complex(x) || inherits(x, c("Date", "POSIXt", "difftime"))) {
-    stop(paste0(name, ": 숫자 변수가 필요합니다."), call. = FALSE)
+    stop(paste0(name, ": \uc22b\uc790 \ubcc0\uc218\uac00 \ud544\uc694\ud569\ub2c8\ub2e4."), call. = FALSE)
   }
   values <- as.numeric(x)
   values[is.na(x)] <- NA_real_ # Includes labelled SPSS user missings.
-  if (any(!is.na(values) & !is.finite(values))) stop(paste0(name, ": 무한값이 있습니다."), call. = FALSE)
+  if (any(!is.na(values) & !is.finite(values))) stop(paste0(name, ": \ubb34\ud55c\uac12\uc774 \uc788\uc2b5\ub2c8\ub2e4."), call. = FALSE)
   values
 }
 check_keys <- function(data, columns, unique = FALSE) {
-  require_columns(data, columns, "식별 변수")
+  require_columns(data, columns, "\uc2dd\ubcc4 \ubcc0\uc218")
   if (any(vapply(data[columns], function(x) any(is.na(x)) || any(trimws(as.character(x)) == "", na.rm = TRUE), logical(1)))) {
-    stop("식별 변수나 시점에 결측값 또는 빈 값이 있습니다.", call. = FALSE)
+    stop("\uc2dd\ubcc4 \ubcc0\uc218\ub098 \uc2dc\uc810\uc5d0 \uacb0\uce21\uac12 \ub610\ub294 \ube48 \uac12\uc774 \uc788\uc2b5\ub2c8\ub2e4.", call. = FALSE)
   }
-  if (unique && anyDuplicated(data[columns])) stop("식별 변수와 시점의 조합이 중복됩니다. 중복을 먼저 확인해 주세요. 자동으로 합치지 않습니다.", call. = FALSE)
+  if (unique && anyDuplicated(data[columns])) stop("\uc2dd\ubcc4 \ubcc0\uc218\uc640 \uc2dc\uc810\uc758 \uc870\ud569\uc774 \uc911\ubcf5\ub429\ub2c8\ub2e4. \uc911\ubcf5\uc744 \uba3c\uc800 \ud655\uc778\ud574 \uc8fc\uc138\uc694. \uc790\ub3d9\uc73c\ub85c \ud569\uce58\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4.", call. = FALSE)
 }
 
 check_reshape_size <- function(rows, columns) {
   if (as.double(rows) * as.double(columns) > 5e6) {
-    stop("변환 결과가 500만 셀을 넘습니다. 선택한 시점과 변수를 줄여 주세요.", call. = FALSE)
+    stop("\ubcc0\ud658 \uacb0\uacfc\uac00 500\ub9cc \uc140\uc744 \ub118\uc2b5\ub2c8\ub2e4. \uc120\ud0dd\ud55c \uc2dc\uc810\uacfc \ubcc0\uc218\ub97c \uc904\uc5ec \uc8fc\uc138\uc694.", call. = FALSE)
   }
 }
 
 long_mapping <- function(data, p) {
-  columns <- require_columns(data, p$columns, "반복 측정 변수")
-  require_text(p$time, "시점 변수 이름")
+  columns <- require_columns(data, p$columns, "\ubc18\ubcf5 \uce21\uc815 \ubcc0\uc218")
+  require_text(p$time, "\uc2dc\uc810 \ubcc0\uc218 \uc774\ub984")
   if (identical(p$layout, "single")) {
-    require_text(p$value, "측정값 변수 이름")
+    require_text(p$value, "\uce21\uc815\uac12 \ubcc0\uc218 \uc774\ub984")
     times <- columns
     if (!is.null(p$prefix) && nzchar(p$prefix)) {
-      if (any(!startsWith(columns, p$prefix))) stop("선택한 변수 이름이 모두 지정한 접두어로 시작해야 합니다.", call. = FALSE)
+      if (any(!startsWith(columns, p$prefix))) stop("\uc120\ud0dd\ud55c \ubcc0\uc218 \uc774\ub984\uc774 \ubaa8\ub450 \uc9c0\uc815\ud55c \uc811\ub450\uc5b4\ub85c \uc2dc\uc791\ud574\uc57c \ud569\ub2c8\ub2e4.", call. = FALSE)
       times <- substring(columns, nchar(p$prefix) + 1L)
     }
     measures <- rep(p$value, length(columns))
   } else if (identical(p$layout, "multiple")) {
-    require_text(p$separator, "이름 구분자")
+    require_text(p$separator, "\uc774\ub984 \uad6c\ubd84\uc790")
     pieces <- strsplit(columns, p$separator, fixed = TRUE)
-    if (any(lengths(pieces) < 2L)) stop("변수 이름을 측정값과 시점으로 나눌 수 없습니다. 구분자를 확인해 주세요.", call. = FALSE)
+    if (any(lengths(pieces) < 2L)) stop("\ubcc0\uc218 \uc774\ub984\uc744 \uce21\uc815\uac12\uacfc \uc2dc\uc810\uc73c\ub85c \ub098\ub20c \uc218 \uc5c6\uc2b5\ub2c8\ub2e4. \uad6c\ubd84\uc790\ub97c \ud655\uc778\ud574 \uc8fc\uc138\uc694.", call. = FALSE)
     times <- vapply(pieces, tail, character(1), n = 1L)
     measures <- vapply(pieces, function(x) paste(head(x, -1L), collapse = p$separator), character(1))
-  } else stop("long 변환의 이름 읽기 방식을 선택해 주세요.", call. = FALSE)
-  if (any(!nzchar(times)) || any(!nzchar(measures))) stop("측정값 이름이나 시점 이름이 비어 있습니다.", call. = FALSE)
+  } else stop("long \ubcc0\ud658\uc758 \uc774\ub984 \uc77d\uae30 \ubc29\uc2dd\uc744 \uc120\ud0dd\ud574 \uc8fc\uc138\uc694.", call. = FALSE)
+  if (any(!nzchar(times)) || any(!nzchar(measures))) stop("\uce21\uc815\uac12 \uc774\ub984\uc774\ub098 \uc2dc\uc810 \uc774\ub984\uc774 \ube44\uc5b4 \uc788\uc2b5\ub2c8\ub2e4.", call. = FALSE)
   mapping <- data.frame(.name = columns, .value = measures, stringsAsFactors = FALSE)
   mapping[[p$time]] <- times
-  if (anyDuplicated(mapping[c(".value", p$time)])) stop("같은 측정값과 시점으로 연결되는 변수가 둘 이상입니다.", call. = FALSE)
+  if (anyDuplicated(mapping[c(".value", p$time)])) stop("\uac19\uc740 \uce21\uc815\uac12\uacfc \uc2dc\uc810\uc73c\ub85c \uc5f0\uacb0\ub418\ub294 \ubcc0\uc218\uac00 \ub458 \uc774\uc0c1\uc785\ub2c8\ub2e4.", call. = FALSE)
   reserved <- setdiff(names(data), columns)
   if (p$time %in% c(".name", ".value") || p$time %in% c(reserved, measures) || any(measures %in% reserved)) {
-    stop("변환 후 변수 이름이 기존 변수 또는 시점 변수와 겹칩니다.", call. = FALSE)
+    stop("\ubcc0\ud658 \ud6c4 \ubcc0\uc218 \uc774\ub984\uc774 \uae30\uc874 \ubcc0\uc218 \ub610\ub294 \uc2dc\uc810 \ubcc0\uc218\uc640 \uacb9\uce69\ub2c8\ub2e4.", call. = FALSE)
   }
   # Combining differently labelled waves would silently change the interpretation.
   for (measure in unique(measures)) {
     attrs <- lapply(data[columns[measures == measure]], function(x) attributes(x)[c("labels", "na_values", "na_range", "label")])
     if (length(attrs) > 1L && !all(vapply(attrs, identical, logical(1), attrs[[1]]))) {
-      stop(paste0(measure, ": 시점별 값 라벨이나 결측 정의가 다릅니다. 먼저 일치시켜 주세요."), call. = FALSE)
+      stop(paste0(measure, ": \uc2dc\uc810\ubcc4 \uac12 \ub77c\ubca8\uc774\ub098 \uacb0\uce21 \uc815\uc758\uac00 \ub2e4\ub985\ub2c8\ub2e4. \uba3c\uc800 \uc77c\uce58\uc2dc\ucf1c \uc8fc\uc138\uc694."), call. = FALSE)
     }
   }
   mapping
@@ -122,55 +122,55 @@ check_research_rule <- function(rule, data) {
   p <- rule_parameters(rule); op <- rule$operation[[1]]
   if (op %in% c("composite", "center", "standardize")) {
     new_column(data, p$output)
-    if (!identical(rule$variable[[1]], p$output)) stop("작업의 출력 변수와 설정이 일치하지 않습니다.", call. = FALSE)
+    if (!identical(rule$variable[[1]], p$output)) stop("\uc791\uc5c5\uc758 \ucd9c\ub825 \ubcc0\uc218\uc640 \uc124\uc815\uc774 \uc77c\uce58\ud558\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4.", call. = FALSE)
   }
   if (op == "labels") {
-    require_text(p$input, "변수"); require_columns(data, p$input, "변수")
-    if (!identical(rule$variable[[1]], p$input) || !identical(p$output, p$input)) stop("라벨의 대상 변수가 다릅니다.", call. = FALSE)
+    require_text(p$input, "\ubcc0\uc218"); require_columns(data, p$input, "\ubcc0\uc218")
+    if (!identical(rule$variable[[1]], p$input) || !identical(p$output, p$input)) stop("\ub77c\ubca8\uc758 \ub300\uc0c1 \ubcc0\uc218\uac00 \ub2e4\ub985\ub2c8\ub2e4.", call. = FALSE)
     x <- data[[p$input]]
-    if (!(is.numeric(x) || is.character(x)) || is.complex(x) || inherits(x, c("Date", "POSIXt", "difftime"))) stop("숫자 또는 문자 변수에 라벨을 적용할 수 있습니다.", call. = FALSE)
-    if (length(p$codes) != length(p$labels) || anyNA(p$codes) || anyNA(p$labels) || any(!nzchar(p$labels)) || length(p$codes) > 5000L) stop("값 라벨 정의를 확인해 주세요.", call. = FALSE)
+    if (!(is.numeric(x) || is.character(x)) || is.complex(x) || inherits(x, c("Date", "POSIXt", "difftime"))) stop("\uc22b\uc790 \ub610\ub294 \ubb38\uc790 \ubcc0\uc218\uc5d0 \ub77c\ubca8\uc744 \uc801\uc6a9\ud560 \uc218 \uc788\uc2b5\ub2c8\ub2e4.", call. = FALSE)
+    if (length(p$codes) != length(p$labels) || anyNA(p$codes) || anyNA(p$labels) || any(!nzchar(p$labels)) || length(p$codes) > 5000L) stop("\uac12 \ub77c\ubca8 \uc815\uc758\ub97c \ud655\uc778\ud574 \uc8fc\uc138\uc694.", call. = FALSE)
     codes <- if (is.numeric(x)) suppressWarnings(as.numeric(p$codes)) else as.character(p$codes)
-    if (anyNA(codes) || anyDuplicated(codes) || (is.numeric(codes) && any(!is.finite(codes)))) stop("라벨 코드가 중복되거나 변수의 자료형과 맞지 않습니다.", call. = FALSE)
-    if (length(p$label) != 1L || is.na(p$label)) stop("변수 설명을 확인해 주세요.", call. = FALSE)
+    if (anyNA(codes) || anyDuplicated(codes) || (is.numeric(codes) && any(!is.finite(codes)))) stop("\ub77c\ubca8 \ucf54\ub4dc\uac00 \uc911\ubcf5\ub418\uac70\ub098 \ubcc0\uc218\uc758 \uc790\ub8cc\ud615\uacfc \ub9de\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4.", call. = FALSE)
+    if (length(p$label) != 1L || is.na(p$label)) stop("\ubcc0\uc218 \uc124\uba85\uc744 \ud655\uc778\ud574 \uc8fc\uc138\uc694.", call. = FALSE)
   } else if (op == "composite") {
-    cols <- require_columns(data, p$inputs, "합칠 문항")
-    if (!p$method %in% c("mean", "sum")) stop("합계 또는 평균을 선택해 주세요.", call. = FALSE)
+    cols <- require_columns(data, p$inputs, "\ud569\uce60 \ubb38\ud56d")
+    if (!p$method %in% c("mean", "sum")) stop("\ud569\uacc4 \ub610\ub294 \ud3c9\uade0\uc744 \uc120\ud0dd\ud574 \uc8fc\uc138\uc694.", call. = FALSE)
     if (length(p$min_valid) != 1L || !is.numeric(p$min_valid) || !is.finite(p$min_valid) ||
         p$min_valid != floor(p$min_valid) || p$min_valid < 1L || p$min_valid > length(cols)) {
-      stop("최소 응답 수는 1 이상, 선택한 문항 수 이하여야 합니다.", call. = FALSE)
+      stop("\ucd5c\uc18c \uc751\ub2f5 \uc218\ub294 1 \uc774\uc0c1, \uc120\ud0dd\ud55c \ubb38\ud56d \uc218 \uc774\ud558\uc5ec\uc57c \ud569\ub2c8\ub2e4.", call. = FALSE)
     }
     invisible(lapply(cols, function(nm) plain_numeric(data[[nm]], nm)))
   } else if (op %in% c("center", "standardize")) {
-    require_columns(data, p$input, "계산할 변수"); require_text(p$input, "계산할 변수")
+    require_columns(data, p$input, "\uacc4\uc0b0\ud560 \ubcc0\uc218"); require_text(p$input, "\uacc4\uc0b0\ud560 \ubcc0\uc218")
     plain_numeric(data[[p$input]], p$input)
-    if (!p$scope %in% c("all", "group", "person")) stop("계산 기준을 선택해 주세요.", call. = FALSE)
+    if (!p$scope %in% c("all", "group", "person")) stop("\uacc4\uc0b0 \uae30\uc900\uc744 \uc120\ud0dd\ud574 \uc8fc\uc138\uc694.", call. = FALSE)
     if (p$scope != "all") check_keys(data, p$groups)
-    if (p$scope == "all" && length(p$groups)) stop("전체 자료 기준에는 묶음 변수를 지정할 수 없습니다.", call. = FALSE)
-    if (!p$reference %in% c("all", "subset", "fixed")) stop("기준값 계산 방식을 선택해 주세요.", call. = FALSE)
+    if (p$scope == "all" && length(p$groups)) stop("\uc804\uccb4 \uc790\ub8cc \uae30\uc900\uc5d0\ub294 \ubb36\uc74c \ubcc0\uc218\ub97c \uc9c0\uc815\ud560 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4.", call. = FALSE)
+    if (!p$reference %in% c("all", "subset", "fixed")) stop("\uae30\uc900\uac12 \uacc4\uc0b0 \ubc29\uc2dd\uc744 \uc120\ud0dd\ud574 \uc8fc\uc138\uc694.", call. = FALSE)
     if (p$reference == "subset") {
-      require_text(p$reference_column, "기준 자료를 고를 변수")
-      require_columns(data, p$reference_column, "기준 자료를 고를 변수")
-      if (!length(p$reference_values) || anyNA(p$reference_values)) stop("기준 자료에 포함할 값을 선택해 주세요.", call. = FALSE)
+      require_text(p$reference_column, "\uae30\uc900 \uc790\ub8cc\ub97c \uace0\ub97c \ubcc0\uc218")
+      require_columns(data, p$reference_column, "\uae30\uc900 \uc790\ub8cc\ub97c \uace0\ub97c \ubcc0\uc218")
+      if (!length(p$reference_values) || anyNA(p$reference_values)) stop("\uae30\uc900 \uc790\ub8cc\uc5d0 \ud3ec\ud568\ud560 \uac12\uc744 \uc120\ud0dd\ud574 \uc8fc\uc138\uc694.", call. = FALSE)
     }
     if (p$reference == "fixed") {
-      if (p$scope != "all") stop("기준값 직접 입력은 전체 자료에 같은 값을 적용할 때 사용할 수 있습니다.", call. = FALSE)
-      if (length(p$center) != 1L || !is.numeric(p$center) || !is.finite(p$center)) stop("유효한 중심값을 입력해 주세요.", call. = FALSE)
-      if (op == "standardize" && (length(p$scale) != 1L || !is.numeric(p$scale) || !is.finite(p$scale) || p$scale <= 0)) stop("표준편차는 0보다 커야 합니다.", call. = FALSE)
+      if (p$scope != "all") stop("\uae30\uc900\uac12 \uc9c1\uc811 \uc785\ub825\uc740 \uc804\uccb4 \uc790\ub8cc\uc5d0 \uac19\uc740 \uac12\uc744 \uc801\uc6a9\ud560 \ub54c \uc0ac\uc6a9\ud560 \uc218 \uc788\uc2b5\ub2c8\ub2e4.", call. = FALSE)
+      if (length(p$center) != 1L || !is.numeric(p$center) || !is.finite(p$center)) stop("\uc720\ud6a8\ud55c \uc911\uc2ec\uac12\uc744 \uc785\ub825\ud574 \uc8fc\uc138\uc694.", call. = FALSE)
+      if (op == "standardize" && (length(p$scale) != 1L || !is.numeric(p$scale) || !is.finite(p$scale) || p$scale <= 0)) stop("\ud45c\uc900\ud3b8\ucc28\ub294 0\ubcf4\ub2e4 \ucee4\uc57c \ud569\ub2c8\ub2e4.", call. = FALSE)
     }
   } else if (op == "long") {
     check_keys(data, p$ids, unique = TRUE)
-    if (length(intersect(p$ids, p$columns))) stop("식별 변수는 반복 측정 변수로 선택할 수 없습니다.", call. = FALSE)
-    if (!is.logical(p$drop_na) || length(p$drop_na) != 1L || is.na(p$drop_na)) stop("결측 시점 처리 방식을 선택해 주세요.", call. = FALSE)
+    if (length(intersect(p$ids, p$columns))) stop("\uc2dd\ubcc4 \ubcc0\uc218\ub294 \ubc18\ubcf5 \uce21\uc815 \ubcc0\uc218\ub85c \uc120\ud0dd\ud560 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4.", call. = FALSE)
+    if (!is.logical(p$drop_na) || length(p$drop_na) != 1L || is.na(p$drop_na)) stop("\uacb0\uce21 \uc2dc\uc810 \ucc98\ub9ac \ubc29\uc2dd\uc744 \uc120\ud0dd\ud574 \uc8fc\uc138\uc694.", call. = FALSE)
     long_mapping(data, p)
   } else if (op == "wide") {
-    require_text(p$time, "시점 변수"); require_text(p$separator, "이름 구분자")
-    require_columns(data, p$values, "펼칠 측정값")
-    if (anyDuplicated(c(p$ids, p$time, p$values))) stop("식별 변수, 시점, 측정값은 서로 다른 변수를 골라 주세요.", call. = FALSE)
+    require_text(p$time, "\uc2dc\uc810 \ubcc0\uc218"); require_text(p$separator, "\uc774\ub984 \uad6c\ubd84\uc790")
+    require_columns(data, p$values, "\ud3bc\uce60 \uce21\uc815\uac12")
+    if (anyDuplicated(c(p$ids, p$time, p$values))) stop("\uc2dd\ubcc4 \ubcc0\uc218, \uc2dc\uc810, \uce21\uc815\uac12\uc740 \uc11c\ub85c \ub2e4\ub978 \ubcc0\uc218\ub97c \uace8\ub77c \uc8fc\uc138\uc694.", call. = FALSE)
     check_keys(data, c(p$ids, p$time), unique = TRUE)
-    require_columns(data, p$ids, "식별 변수")
+    require_columns(data, p$ids, "\uc2dd\ubcc4 \ubcc0\uc218")
   }
-  if (!nrow(data)) stop("계산할 행이 없습니다.", call. = FALSE)
+  if (!nrow(data)) stop("\uacc4\uc0b0\ud560 \ud589\uc774 \uc5c6\uc2b5\ub2c8\ub2e4.", call. = FALSE)
   invisible(TRUE)
 }
 
@@ -191,17 +191,17 @@ apply_research_rule <- function(data, rule) {
     }
     out[[p$input]] <- x; affected <- length(x)
     details <- list(codes = p$codes, labels = p$labels, label = p$label)
-    note <- sprintf("값은 유지하고 변수 설명과 값 라벨 %d개를 적용합니다.", length(labels))
+    note <- sprintf("\uac12\uc740 \uc720\uc9c0\ud558\uace0 \ubcc0\uc218 \uc124\uba85\uacfc \uac12 \ub77c\ubca8 %d\uac1c\ub97c \uc801\uc6a9\ud569\ub2c8\ub2e4.", length(labels))
   } else if (op == "composite") {
     m <- do.call(cbind, lapply(p$inputs, function(nm) plain_numeric(data[[nm]], nm)))
     valid <- rowSums(!is.na(m)); y <- rowSums(m, na.rm = TRUE)
     if (p$method == "mean") y <- y / pmax(valid, 1L)
     y[valid < p$min_valid] <- NA_real_
-    if (any(!is.na(y) & !is.finite(y))) stop("계산 결과가 너무 큽니다. 입력값을 확인해 주세요.", call. = FALSE)
+    if (any(!is.na(y) & !is.finite(y))) stop("\uacc4\uc0b0 \uacb0\uacfc\uac00 \ub108\ubb34 \ud07d\ub2c8\ub2e4. \uc785\ub825\uac12\uc744 \ud655\uc778\ud574 \uc8fc\uc138\uc694.", call. = FALSE)
     out[[p$output]] <- y
     details <- list(valid_item_counts = as.data.frame(table(valid)), min_valid = p$min_valid,
       scored = sum(!is.na(y)), unscored = sum(is.na(y)))
-    note <- sprintf("%d문항 중 %d개 이상 응답: %d행 계산, %d행 결측", length(p$inputs), p$min_valid, sum(!is.na(y)), sum(is.na(y)))
+    note <- sprintf("%d\ubb38\ud56d \uc911 %d\uac1c \uc774\uc0c1 \uc751\ub2f5: %d\ud589 \uacc4\uc0b0, %d\ud589 \uacb0\uce21", length(p$inputs), p$min_valid, sum(!is.na(y)), sum(is.na(y)))
     affected <- sum(!is.na(y)); after <- sum(is.na(y))
   } else if (op %in% c("center", "standardize")) {
     x <- plain_numeric(data[[p$input]], p$input); before <- sum(is.na(x))
@@ -213,25 +213,25 @@ apply_research_rule <- function(data, rule) {
       g <- grouping[[rows[[1]]]]
       ref <- rows[reference[rows] & !is.na(x[rows])]
       if (p$reference == "fixed") { center <- p$center; scale <- if (op == "standardize") p$scale else 1 } else {
-        if (!length(ref)) stop(sprintf("묶음 %d에 기준값을 계산할 유효 응답이 없습니다.", g), call. = FALSE)
+        if (!length(ref)) stop(sprintf("\ubb36\uc74c %d\uc5d0 \uae30\uc900\uac12\uc744 \uacc4\uc0b0\ud560 \uc720\ud6a8 \uc751\ub2f5\uc774 \uc5c6\uc2b5\ub2c8\ub2e4.", g), call. = FALSE)
         center <- mean(x[ref]); scale <- if (op == "standardize") stats::sd(x[ref]) else 1
-        if (!is.finite(center) || !is.finite(scale) || scale <= 0) stop(sprintf("묶음 %d의 표준편차를 계산할 수 없습니다. 유효 응답 2개 이상과 서로 다른 값이 필요합니다.", g), call. = FALSE)
+        if (!is.finite(center) || !is.finite(scale) || scale <= 0) stop(sprintf("\ubb36\uc74c %d\uc758 \ud45c\uc900\ud3b8\ucc28\ub97c \uacc4\uc0b0\ud560 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4. \uc720\ud6a8 \uc751\ub2f5 2\uac1c \uc774\uc0c1\uacfc \uc11c\ub85c \ub2e4\ub978 \uac12\uc774 \ud544\uc694\ud569\ub2c8\ub2e4.", g), call. = FALSE)
       }
       y[rows] <- (x[rows] - center) / scale
-      group <- if (p$scope == "all") data.frame(group = "전체") else data[rows[[1]], p$groups, drop = FALSE]
-      names(group) <- paste0("기준_", names(group))
+      group <- if (p$scope == "all") data.frame(group = "\uc804\uccb4") else data[rows[[1]], p$groups, drop = FALSE]
+      names(group) <- paste0("\uae30\uc900_", names(group))
       group$reference_n <- if (p$reference == "fixed") NA_integer_ else length(ref)
       group$center <- center; group$scale <- scale; stats[[length(stats) + 1L]] <- group
     }
-    if (any(!is.na(y) & !is.finite(y))) stop("계산 결과가 너무 큽니다. 기준값을 확인해 주세요.", call. = FALSE)
+    if (any(!is.na(y) & !is.finite(y))) stop("\uacc4\uc0b0 \uacb0\uacfc\uac00 \ub108\ubb34 \ud07d\ub2c8\ub2e4. \uae30\uc900\uac12\uc744 \ud655\uc778\ud574 \uc8fc\uc138\uc694.", call. = FALSE)
     out[[p$output]] <- y; table <- do.call(rbind, stats); rownames(table) <- NULL
     details <- list(reference = p$reference, scope = p$scope, constants = table,
       sd_definition = if (op == "standardize" && p$reference != "fixed") "sample n-1" else "specified or unused")
-    note <- paste(vapply(seq_len(min(nrow(table), 6L)), function(i) sprintf("%s: n=%s, 중심=%g%s",
+    note <- paste(vapply(seq_len(min(nrow(table), 6L)), function(i) sprintf("%s: n=%s, \uc911\uc2ec=%g%s",
       paste(as.character(table[i, seq_len(ncol(table) - 3L), drop = TRUE]), collapse = "/"),
-      ifelse(is.na(table$reference_n[[i]]), "직접 입력", table$reference_n[[i]]), table$center[[i]],
-      if (op == "standardize") sprintf(", 표준편차=%g", table$scale[[i]]) else ""), character(1)), collapse = "; ")
-    if (nrow(table) > 6L) note <- paste0(note, "; 나머지 기준값은 다운로드한 적용 기록에서 확인할 수 있습니다.")
+      ifelse(is.na(table$reference_n[[i]]), "\uc9c1\uc811 \uc785\ub825", table$reference_n[[i]]), table$center[[i]],
+      if (op == "standardize") sprintf(", \ud45c\uc900\ud3b8\ucc28=%g", table$scale[[i]]) else ""), character(1)), collapse = "; ")
+    if (nrow(table) > 6L) note <- paste0(note, "; \ub098\uba38\uc9c0 \uae30\uc900\uac12\uc740 \ub2e4\uc6b4\ub85c\ub4dc\ud55c \uc801\uc6a9 \uae30\ub85d\uc5d0\uc11c \ud655\uc778\ud560 \uc218 \uc788\uc2b5\ub2c8\ub2e4.")
     affected <- sum(!is.na(y)); after <- sum(is.na(y))
   } else if (op == "long") {
     mapping <- long_mapping(data, p)
@@ -242,23 +242,23 @@ apply_research_rule <- function(data, rule) {
     before <- sum(vapply(data[p$columns], function(x) sum(is.na(x)), integer(1)))
     after <- sum(vapply(out[unique(mapping$.value)], function(x) sum(is.na(x)), integer(1)))
     details <- list(mapping = mapping, ids = p$ids, dropped_rows = nrow(data) * length(unique(mapping[[p$time]])) - nrow(out))
-    note <- paste0(nrow(data), "행 → ", nrow(out), "행. ", paste(p$ids, collapse = ", "), "와 ", p$time, " 조합 확인. ",
-      if (p$drop_na) paste0("모든 측정값이 결측인 시점 ", details$dropped_rows, "행 제외.") else "결측 시점 유지.",
-      " 연결: ", paste(head(paste0(mapping$.name, " → ", mapping$.value, " [", mapping[[p$time]], "]"), 8L), collapse = "; "))
+    note <- paste0(nrow(data), "\ud589 \u2192 ", nrow(out), "\ud589. ", paste(p$ids, collapse = ", "), "\uc640 ", p$time, " \uc870\ud569 \ud655\uc778. ",
+      if (p$drop_na) paste0("\ubaa8\ub4e0 \uce21\uc815\uac12\uc774 \uacb0\uce21\uc778 \uc2dc\uc810 ", details$dropped_rows, "\ud589 \uc81c\uc678.") else "\uacb0\uce21 \uc2dc\uc810 \uc720\uc9c0.",
+      " \uc5f0\uacb0: ", paste(head(paste0(mapping$.name, " \u2192 ", mapping$.value, " [", mapping[[p$time]], "]"), 8L), collapse = "; "))
     affected <- nrow(out)
   } else {
     ids <- p$ids; time <- p$time; values <- p$values
     groups <- as.integer(vctrs::vec_group_id(data[ids]))
     extra <- setdiff(names(data), c(ids, time, values))
     for (nm in extra) {
-      if (nrow(unique(data[c(ids, nm)])) > length(unique(groups))) stop(paste0(nm, ": 같은 대상 안에서 값이 다릅니다. 펼칠 측정값에 포함하거나 식별 변수를 확인해 주세요."), call. = FALSE)
+      if (nrow(unique(data[c(ids, nm)])) > length(unique(groups))) stop(paste0(nm, ": \uac19\uc740 \ub300\uc0c1 \uc548\uc5d0\uc11c \uac12\uc774 \ub2e4\ub985\ub2c8\ub2e4. \ud3bc\uce60 \uce21\uc815\uac12\uc5d0 \ud3ec\ud568\ud558\uac70\ub098 \uc2dd\ubcc4 \ubcc0\uc218\ub97c \ud655\uc778\ud574 \uc8fc\uc138\uc694."), call. = FALSE)
     }
     times <- unique(data[[time]])
     check_reshape_size(length(unique(groups)), length(ids) + length(extra) + as.double(length(values)) * length(times))
     mapping <- data.frame(.name = unlist(lapply(values, function(v) paste0(v, p$separator, as.character(times)))),
       .value = rep(values, each = length(times)), stringsAsFactors = FALSE)
     mapping[[time]] <- rep(times, times = length(values))
-    if (anyDuplicated(mapping$.name) || any(mapping$.name %in% c(ids, extra))) stop("펼친 변수 이름이 중복되거나 기존 변수와 겹칩니다. 이름 구분자나 시점 값을 바꿔 주세요.", call. = FALSE)
+    if (anyDuplicated(mapping$.name) || any(mapping$.name %in% c(ids, extra))) stop("\ud3bc\uce5c \ubcc0\uc218 \uc774\ub984\uc774 \uc911\ubcf5\ub418\uac70\ub098 \uae30\uc874 \ubcc0\uc218\uc640 \uacb9\uce69\ub2c8\ub2e4. \uc774\ub984 \uad6c\ubd84\uc790\ub098 \uc2dc\uc810 \uac12\uc744 \ubc14\uafd4 \uc8fc\uc138\uc694.", call. = FALSE)
     out <- as.data.frame(tidyr::pivot_wider_spec(data[c(ids, time, values)], mapping,
       id_cols = tidyselect::all_of(ids), names_repair = "check_unique"))
     if (length(extra)) {
@@ -270,7 +270,7 @@ apply_research_rule <- function(data, rule) {
     after <- sum(vapply(out[mapping$.name], function(x) sum(is.na(x)), integer(1)))
     details <- list(mapping = mapping, ids = ids, preserved_columns = extra,
       absent_combinations = nrow(out) * length(times) - nrow(data))
-    note <- sprintf("%d행 → %d행. 중복 조합 없음. 없는 시점 조합 %d개는 결측으로 채웠습니다.", nrow(data), nrow(out), details$absent_combinations)
+    note <- sprintf("%d\ud589 \u2192 %d\ud589. \uc911\ubcf5 \uc870\ud569 \uc5c6\uc74c. \uc5c6\ub294 \uc2dc\uc810 \uc870\ud569 %d\uac1c\ub294 \uacb0\uce21\uc73c\ub85c \ucc44\uc6e0\uc2b5\ub2c8\ub2e4.", nrow(data), nrow(out), details$absent_combinations)
     affected <- nrow(out)
   }
   list(data = out, n_affected = affected, missing_before = before, missing_after = after,

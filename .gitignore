@@ -1,0 +1,42 @@
+# Local settings and credentials
+.DS_Store
+Thumbs.db
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+.Rprofile
+.Renviron
+.Renviron.*
+.env
+.env.*
+*.key
+*.pem
+
+# Research inputs, saved plans and generated outputs
+private/
+data/
+outputs/
+*.zip
+*.sav
+*.dta
+*.rds
+*.RDS
+*.csv
+*.tsv
+*.xls
+*.xlsx
+*.pdf
+*.json
+
+# Bundled synthetic examples
+!examples/synthetic_survey.csv
+!examples/synthetic_codebook.xlsx
+!examples/synthetic_panel.csv
+!examples/synthetic_panel_codebook.csv
+
+# Package resources (synthetic data only)
+!inst/examples/
+!inst/examples/**
+*.tar.gz
+*.Rcheck/

@@ -1,0 +1,4 @@
+export(run_app)
+import(shiny)
+importFrom(utils,capture.output,head,tail,read.csv,write.csv)
+importFrom(stats,setNames,na.omit)

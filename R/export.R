@@ -1,12 +1,6 @@
 # Create a standalone R script and reproducibility bundle.
 
 make_standalone_script <- function(approved_rules, root = ".", import_options = list()) {
-  io_file <- file.path(root, "R", "data_io.R")
-  rules_file <- file.path(root, "R", "rules.R")
-  transforms_file <- file.path(root, "R", "transformations.R")
-  if (!all(file.exists(c(io_file, rules_file, transforms_file)))) {
-    stop("R 소스 파일을 찾지 못했습니다. 프로젝트 루트에서 앱을 실행해 주세요.", call. = FALSE)
-  }
   rules_text <- paste(capture.output(dput(approved_rules)), collapse = "\n")
   import_options <- do.call(normalize_import_options, import_options)
   import_text <- paste(capture.output(dput(import_options)), collapse = "\n")
@@ -15,10 +9,7 @@ make_standalone_script <- function(approved_rules, root = ".", import_options = 
     "# Usage: Rscript preprocessing.R original_data.csv [cleaned_data.rds]",
     "# IMPORTANT: inspect approved rules; this script does not run any AI code.",
     "",
-    readLines(io_file, warn = FALSE, encoding = "UTF-8"),
-    "",
-    readLines(transforms_file, warn = FALSE, encoding = "UTF-8"),
-    readLines(rules_file, warn = FALSE, encoding = "UTF-8"),
+    standalone_definitions(),
     "",
     paste0("approved_rules <- ", rules_text),
     paste0("import_options <- ", import_text),
@@ -38,7 +29,7 @@ make_standalone_script <- function(approved_rules, root = ".", import_options = 
 export_bundle <- function(path, result, approved_rules, metadata,
                           source_name, root = ".", import_options = list(), review = NULL) {
   if (!requireNamespace("zip", quietly = TRUE)) {
-    stop("install.packages('zip')를 먼저 실행하세요.", call. = FALSE)
+    stop("install.packages('zip')\ub97c \uba3c\uc800 \uc2e4\ud589\ud558\uc138\uc694.", call. = FALSE)
   }
   dir <- tempfile("codebookr-export-")
   dir.create(dir, recursive = TRUE)
@@ -86,4 +77,25 @@ export_bundle <- function(path, result, approved_rules, metadata,
   files <- list.files(dir, full.names = FALSE)
   zip::zipr(zipfile = path, files = files, root = dir, include_directories = FALSE)
   invisible(path)
+}
+
+# Follow only bindings owned by this package. Dependency functions retain their
+# explicit pkg:: calls; neither user data nor AI responses are treated as code.
+standalone_definitions <- function() {
+  owner <- environment(apply_approved_rules)
+  pending <- c("read_dataset", "apply_approved_rules")
+  seen <- character()
+  output <- character()
+  while (length(pending)) {
+    name <- pending[[1L]]
+    pending <- pending[-1L]
+    if (name %in% seen || !exists(name, envir = owner, inherits = FALSE)) next
+    seen <- c(seen, name)
+    value <- get(name, envir = owner, inherits = FALSE)
+    if (is.function(value)) {
+      pending <- unique(c(pending, codetools::findGlobals(value)))
+    }
+    output <- c(output, paste0(name, " <- "), deparse(value, width.cutoff = 100L), "")
+  }
+  output
 }

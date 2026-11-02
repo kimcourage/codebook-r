@@ -16,25 +16,25 @@ compact_text <- function(x) {
 
 classify_header <- function(x) {
   x <- tolower(gsub("[[:space:]_.()/-]", "", trimws(x), perl = TRUE))
-  if (grepl("^(변수명|변수코드|변수id|variable|varname|변수번호|문항코드|질문코드)$", x)) return("variable")
-  if (grepl("^(변수설명|변수라벨|변수레이블|문항명|문항내용|질문내용|질문|설문문항|variablelabel|question|description|questiondescription|label)$", x)) return("label")
-  if (grepl("^(값|코드값|응답코드|응답값|값코드|value|valuecode|code)$", x)) return("value_code")
-  if (grepl("^(값설명|값라벨|값레이블|응답내용|응답범주|응답라벨|보기|범주명|범주설명|valuelabel|codelabel|category)$", x)) return("value_label")
-  if (grepl("^(비고|주석|참고|note|notes|결측처리|결측코드)$", x)) return("note")
-  if (grepl("^(최소|최소값|하한|minimum|min|lower)$", x)) return("minimum")
-  if (grepl("^(최대|최대값|상한|maximum|max|upper)$", x)) return("maximum")
+  if (grepl("^(\ubcc0\uc218\uba85|\ubcc0\uc218\ucf54\ub4dc|\ubcc0\uc218id|variable|varname|\ubcc0\uc218\ubc88\ud638|\ubb38\ud56d\ucf54\ub4dc|\uc9c8\ubb38\ucf54\ub4dc)$", x)) return("variable")
+  if (grepl("^(\ubcc0\uc218\uc124\uba85|\ubcc0\uc218\ub77c\ubca8|\ubcc0\uc218\ub808\uc774\ube14|\ubb38\ud56d\uba85|\ubb38\ud56d\ub0b4\uc6a9|\uc9c8\ubb38\ub0b4\uc6a9|\uc9c8\ubb38|\uc124\ubb38\ubb38\ud56d|variablelabel|question|description|questiondescription|label)$", x)) return("label")
+  if (grepl("^(\uac12|\ucf54\ub4dc\uac12|\uc751\ub2f5\ucf54\ub4dc|\uc751\ub2f5\uac12|\uac12\ucf54\ub4dc|value|valuecode|code)$", x)) return("value_code")
+  if (grepl("^(\uac12\uc124\uba85|\uac12\ub77c\ubca8|\uac12\ub808\uc774\ube14|\uc751\ub2f5\ub0b4\uc6a9|\uc751\ub2f5\ubc94\uc8fc|\uc751\ub2f5\ub77c\ubca8|\ubcf4\uae30|\ubc94\uc8fc\uba85|\ubc94\uc8fc\uc124\uba85|valuelabel|codelabel|category)$", x)) return("value_label")
+  if (grepl("^(\ube44\uace0|\uc8fc\uc11d|\ucc38\uace0|note|notes|\uacb0\uce21\ucc98\ub9ac|\uacb0\uce21\ucf54\ub4dc)$", x)) return("note")
+  if (grepl("^(\ucd5c\uc18c|\ucd5c\uc18c\uac12|\ud558\ud55c|minimum|min|lower)$", x)) return("minimum")
+  if (grepl("^(\ucd5c\ub300|\ucd5c\ub300\uac12|\uc0c1\ud55c|maximum|max|upper)$", x)) return("maximum")
   ""
 }
 
 parse_tabular_codebook <- function(table, source_file, sheet = "", max_rows = 5000L) {
   out <- empty_codebook_records()
   if (is.null(table) || !nrow(table) || !ncol(table)) {
-    return(list(records = out, excerpt = "", detected = FALSE, note = "빈 시트입니다."))
+    return(list(records = out, excerpt = "", detected = FALSE, note = "\ube48 \uc2dc\ud2b8\uc785\ub2c8\ub2e4."))
   }
   raw <- as.data.frame(table, stringsAsFactors = FALSE)
   limits <- character()
-  if (nrow(raw) > max_rows) limits <- c(limits, sprintf("처음 %d행만 검사했습니다.", max_rows))
-  if (ncol(raw) > 35L) limits <- c(limits, "처음 35열만 검사했습니다.")
+  if (nrow(raw) > max_rows) limits <- c(limits, sprintf("\ucc98\uc74c %d\ud589\ub9cc \uac80\uc0ac\ud588\uc2b5\ub2c8\ub2e4.", max_rows))
+  if (ncol(raw) > 35L) limits <- c(limits, "\ucc98\uc74c 35\uc5f4\ub9cc \uac80\uc0ac\ud588\uc2b5\ub2c8\ub2e4.")
   note <- paste(limits, collapse = " ")
   raw[] <- lapply(raw, compact_text)
   raw <- head(raw, max_rows)
@@ -53,7 +53,7 @@ parse_tabular_codebook <- function(table, source_file, sheet = "", max_rows = 50
   if (!length(scores) || max(scores) < 3L ||
       !("variable" %in% headers[[which.max(scores)]])) {
     return(list(records = out, excerpt = excerpt, source_lines = source_lines, detected = FALSE,
-      note = paste("첫 25행에서 변수명 헤더를 찾지 못했습니다. 발췌문을 확인하거나 수동 규칙을 추가해 주세요.", note)))
+      note = paste("\uccab 25\ud589\uc5d0\uc11c \ubcc0\uc218\uba85 \ud5e4\ub354\ub97c \ucc3e\uc9c0 \ubabb\ud588\uc2b5\ub2c8\ub2e4. \ubc1c\ucdcc\ubb38\uc744 \ud655\uc778\ud558\uac70\ub098 \uc218\ub3d9 \uaddc\uce59\uc744 \ucd94\uac00\ud574 \uc8fc\uc138\uc694.", note)))
   }
   header_row <- candidates[which.max(scores)]
   h <- headers[[which.max(scores)]]
@@ -70,7 +70,7 @@ parse_tabular_codebook <- function(table, source_file, sheet = "", max_rows = 50
   previous_var <- ""
   previous_label <- ""
   if (header_row >= nrow(raw)) {
-    return(list(records = out, excerpt = excerpt, source_lines = source_lines, detected = TRUE, note = paste("헤더 뒤에 변수 기록이 없습니다.", note)))
+    return(list(records = out, excerpt = excerpt, source_lines = source_lines, detected = TRUE, note = paste("\ud5e4\ub354 \ub4a4\uc5d0 \ubcc0\uc218 \uae30\ub85d\uc774 \uc5c6\uc2b5\ub2c8\ub2e4.", note)))
   }
   rows <- lapply(seq.int(header_row + 1L, nrow(raw)), function(i) {
     v <- val(i, "variable")
@@ -104,11 +104,11 @@ parse_tabular_codebook <- function(table, source_file, sheet = "", max_rows = 50
 
 parse_pdf_codebook <- function(path, source_file, max_pages = 80L) {
   pages <- pdftools::pdf_text(path)
-  if (!length(pages)) stop("PDF에서 텍스트를 찾지 못했습니다.", call. = FALSE)
-  note <- if (length(pages) > max_pages) sprintf("처음 %d페이지만 검사했습니다.", max_pages) else ""
+  if (!length(pages)) stop("PDF\uc5d0\uc11c \ud14d\uc2a4\ud2b8\ub97c \ucc3e\uc9c0 \ubabb\ud588\uc2b5\ub2c8\ub2e4.", call. = FALSE)
+  note <- if (length(pages) > max_pages) sprintf("\ucc98\uc74c %d\ud398\uc774\uc9c0\ub9cc \uac80\uc0ac\ud588\uc2b5\ub2c8\ub2e4.", max_pages) else ""
   pages <- head(pages, max_pages)
   if (sum(nchar(pages)) < 30L) {
-    stop("PDF의 텍스트를 추출할 수 없습니다. 스캔 PDF는 현재 OCR을 지원하지 않습니다.", call. = FALSE)
+    stop("PDF\uc758 \ud14d\uc2a4\ud2b8\ub97c \ucd94\ucd9c\ud560 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4. \uc2a4\uce94 PDF\ub294 \ud604\uc7ac OCR\uc744 \uc9c0\uc6d0\ud558\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4.", call. = FALSE)
   }
   all_lines <- character(); source_lines <- list()
   out <- empty_codebook_records()
@@ -134,7 +134,7 @@ parse_pdf_codebook <- function(path, source_file, max_pages = 80L) {
   list(records = out, source_lines = if (length(source_lines)) do.call(rbind, source_lines) else data.frame(),
        excerpt = paste(head(all_lines, 180L), collapse = "\n"),
        detected = nrow(out) > 0L,
-       note = paste(if (!nrow(out)) "표 구조를 인식하지 못했습니다. 발췌문을 확인한 뒤 수동 규칙이나 AI 제안을 이용해 주세요." else "", note))
+       note = paste(if (!nrow(out)) "\ud45c \uad6c\uc870\ub97c \uc778\uc2dd\ud558\uc9c0 \ubabb\ud588\uc2b5\ub2c8\ub2e4. \ubc1c\ucdcc\ubb38\uc744 \ud655\uc778\ud55c \ub4a4 \uc218\ub3d9 \uaddc\uce59\uc774\ub098 AI \uc81c\uc548\uc744 \uc774\uc6a9\ud574 \uc8fc\uc138\uc694." else "", note))
 }
 
 read_codebooks <- function(file_info) {
@@ -144,7 +144,7 @@ read_codebooks <- function(file_info) {
   }
   records <- list(); excerpts <- character(); summary <- list(); source_lines <- list()
   if (anyDuplicated(basename(file_info$name))) {
-    stop("코드북 파일명이 중복됩니다. 근거를 구별할 수 있도록 파일명을 바꿔 주세요.", call. = FALSE)
+    stop("\ucf54\ub4dc\ubd81 \ud30c\uc77c\uba85\uc774 \uc911\ubcf5\ub429\ub2c8\ub2e4. \uadfc\uac70\ub97c \uad6c\ubcc4\ud560 \uc218 \uc788\ub3c4\ub85d \ud30c\uc77c\uba85\uc744 \ubc14\uafd4 \uc8fc\uc138\uc694.", call. = FALSE)
   }
   for (i in seq_len(nrow(file_info))) {
     file_name <- basename(file_info$name[[i]])
@@ -165,7 +165,7 @@ read_codebooks <- function(file_info) {
         summary[[length(summary) + 1L]] <- data.frame(
           file = file_name, section = sheet, recognized = parsed$detected,
           variables = length(unique(parsed$records$variable)),
-          note = paste(parsed$note, if (length(all_sheets) > 20L) "처음 20개 시트만 검사했습니다." else ""),
+          note = paste(parsed$note, if (length(all_sheets) > 20L) "\ucc98\uc74c 20\uac1c \uc2dc\ud2b8\ub9cc \uac80\uc0ac\ud588\uc2b5\ub2c8\ub2e4." else ""),
           stringsAsFactors = FALSE
         )
       }
@@ -194,7 +194,7 @@ read_codebooks <- function(file_info) {
         note = if (is.null(parsed$note)) "" else parsed$note, stringsAsFactors = FALSE
       )
     } else {
-      stop(sprintf("지원하지 않는 코드북 형식: %s", file_name), call. = FALSE)
+      stop(sprintf("\uc9c0\uc6d0\ud558\uc9c0 \uc54a\ub294 \ucf54\ub4dc\ubd81 \ud615\uc2dd: %s", file_name), call. = FALSE)
     }
   }
   nonempty <- Filter(function(x) nrow(x) > 0L, records)

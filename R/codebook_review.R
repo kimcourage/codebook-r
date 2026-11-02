@@ -75,7 +75,7 @@ codebook_candidates <- function(data, codebooks, mapping) {
     missing_only <- !nzchar(label) && nrow(codes) && all(codes$value_code %in% unlist(lapply(out$values[out$variable == v], split_codes)))
     if ((!nzchar(label) && !nrow(codes)) || missing_only) next
     p <- list(input = v, output = v, codes = codes$value_code, labels = codes$value_label, label = label)
-    candidate <- new_research_rule("labels", p, "코드북의 변수 설명과 값 라벨 적용")
+    candidate <- new_research_rule("labels", p, "\ucf54\ub4dc\ubd81\uc758 \ubcc0\uc218 \uc124\uba85\uacfc \uac12 \ub77c\ubca8 \uc801\uc6a9")
     candidate$source <- "codebook"
     candidate$evidence <- paste(unique(paste(rows$source_file, rows$source_loc, sep = " / ")), collapse = "; ")
     out <- append_rule_candidates(out, candidate, data)
@@ -87,33 +87,33 @@ codebook_comparison <- function(data, codebooks, mapping, decisions = NULL) {
   r <- canonical_codebook_codes(mapped_codebook(codebooks, mapping)$records, data)
   rows <- lapply(names(data), function(v) {
     defs <- r[r$variable == v, , drop = FALSE]; issues <- character()
-    if (!nrow(defs)) issues <- "연결된 코드북 정의가 없습니다."
+    if (!nrow(defs)) issues <- "\uc5f0\uacb0\ub41c \ucf54\ub4dc\ubd81 \uc815\uc758\uac00 \uc5c6\uc2b5\ub2c8\ub2e4."
     conflicts <- codebook_conflicts(defs)
-    if (length(conflicts)) issues <- c(issues, paste("코드 정의가 서로 다릅니다:", paste(conflicts, collapse = ", ")))
+    if (length(conflicts)) issues <- c(issues, paste("\ucf54\ub4dc \uc815\uc758\uac00 \uc11c\ub85c \ub2e4\ub985\ub2c8\ub2e4:", paste(conflicts, collapse = ", ")))
     descriptions <- unique(defs$label[nzchar(defs$label)])
-    if (length(descriptions) > 1L) issues <- c(issues, "변수 설명이 서로 다릅니다.")
+    if (length(descriptions) > 1L) issues <- c(issues, "\ubcc0\uc218 \uc124\uba85\uc774 \uc11c\ub85c \ub2e4\ub985\ub2c8\ub2e4.")
     codes <- unique(defs$value_code[nzchar(defs$value_code)])
     missing_codes <- unlist(lapply(heuristic_missing_rules(defs, data)$values, split_codes))
     observed <- raw_codes(data[[v]]); valid <- !is.na(observed)
     # A list of missing codes alone is not an exhaustive enumeration of valid codes.
     has_categories <- any(!codes %in% missing_codes)
     unknown <- if (has_categories) unique(observed[valid & !observed %in% codes]) else character()
-    if (length(unknown)) issues <- c(issues, paste0("코드북 목록에 없는 값 ", sum(valid & !observed %in% codes), "개: ", paste(head(unknown, 8L), collapse = ", "), ". 범주 목록이 완전한지 확인하세요."))
+    if (length(unknown)) issues <- c(issues, paste0("\ucf54\ub4dc\ubd81 \ubaa9\ub85d\uc5d0 \uc5c6\ub294 \uac12 ", sum(valid & !observed %in% codes), "\uac1c: ", paste(head(unknown, 8L), collapse = ", "), ". \ubc94\uc8fc \ubaa9\ub85d\uc774 \uc644\uc804\ud55c\uc9c0 \ud655\uc778\ud558\uc138\uc694."))
     lo <- unique(defs$minimum[nzchar(defs$minimum)]); hi <- unique(defs$maximum[nzchar(defs$maximum)])
     outside <- 0L
-    if (length(lo) > 1L || length(hi) > 1L) issues <- c(issues, "허용 범위 정의가 서로 다릅니다.")
+    if (length(lo) > 1L || length(hi) > 1L) issues <- c(issues, "\ud5c8\uc6a9 \ubc94\uc704 \uc815\uc758\uac00 \uc11c\ub85c \ub2e4\ub985\ub2c8\ub2e4.")
     if (length(lo) == 1L || length(hi) == 1L) {
       lower <- if (length(lo) == 1L) suppressWarnings(as.numeric(lo)) else -Inf
       upper <- if (length(hi) == 1L) suppressWarnings(as.numeric(hi)) else Inf
-      if (is.na(lower) || is.na(upper) || lower > upper) issues <- c(issues, "허용 범위를 숫자로 해석하지 못했습니다.") else if (!is.numeric(data[[v]])) issues <- c(issues, "숫자 범위가 정의되어 있으나 자료는 숫자형이 아닙니다.") else {
+      if (is.na(lower) || is.na(upper) || lower > upper) issues <- c(issues, "\ud5c8\uc6a9 \ubc94\uc704\ub97c \uc22b\uc790\ub85c \ud574\uc11d\ud558\uc9c0 \ubabb\ud588\uc2b5\ub2c8\ub2e4.") else if (!is.numeric(data[[v]])) issues <- c(issues, "\uc22b\uc790 \ubc94\uc704\uac00 \uc815\uc758\ub418\uc5b4 \uc788\uc73c\ub098 \uc790\ub8cc\ub294 \uc22b\uc790\ud615\uc774 \uc544\ub2d9\ub2c8\ub2e4.") else {
         x <- as.numeric(data[[v]]); eligible <- !is.na(data[[v]]) & !observed %in% missing_codes
         outside <- sum(eligible & (x < lower | x > upper), na.rm = TRUE)
-        if (outside) issues <- c(issues, paste0("허용 범위 밖 값 ", outside, "개. 자동으로 바꾸지 않습니다."))
+        if (outside) issues <- c(issues, paste0("\ud5c8\uc6a9 \ubc94\uc704 \ubc16 \uac12 ", outside, "\uac1c. \uc790\ub3d9\uc73c\ub85c \ubc14\uafb8\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4."))
       }
     }
-    if (any(grepl("분기|응답.?대상|건너|skip|universe|역문항|reverse|척도|scor", defs$note, ignore.case = TRUE))) issues <- c(issues, "분기, 역문항 또는 점수 지침이 있습니다. 자동 점검 대상에 포함되지 않은 조건을 원문에서 확인하세요.")
-    state <- if (length(issues)) "확인 필요" else "정의 연결됨"
-    decision <- "미검토"; reason <- ""
+    if (any(grepl("\ubd84\uae30|\uc751\ub2f5.?\ub300\uc0c1|\uac74\ub108|skip|universe|\uc5ed\ubb38\ud56d|reverse|\ucc99\ub3c4|scor", defs$note, ignore.case = TRUE))) issues <- c(issues, "\ubd84\uae30, \uc5ed\ubb38\ud56d \ub610\ub294 \uc810\uc218 \uc9c0\uce68\uc774 \uc788\uc2b5\ub2c8\ub2e4. \uc790\ub3d9 \uc810\uac80 \ub300\uc0c1\uc5d0 \ud3ec\ud568\ub418\uc9c0 \uc54a\uc740 \uc870\uac74\uc744 \uc6d0\ubb38\uc5d0\uc11c \ud655\uc778\ud558\uc138\uc694.")
+    state <- if (length(issues)) "\ud655\uc778 \ud544\uc694" else "\uc815\uc758 \uc5f0\uacb0\ub428"
+    decision <- "\ubbf8\uac80\ud1a0"; reason <- ""
     if (!is.null(decisions) && v %in% decisions$variable) {
       d <- decisions[match(v, decisions$variable), , drop = FALSE]; decision <- d$decision; reason <- d$reason
     }
@@ -131,7 +131,7 @@ value_frequency <- function(data, variable) {
   if (!variable %in% names(data)) return(data.frame())
   x <- raw_codes(data[[variable]]); x[is.na(x)] <- "(NA)"
   t <- sort(table(x), decreasing = TRUE)
-  data.frame(값 = head(names(t), 25L), 빈도 = as.integer(head(t, 25L)), check.names = FALSE)
+  data.frame("\uac12" = head(names(t), 25L), "\ube48\ub3c4" = as.integer(head(t, 25L)), check.names = FALSE)
 }
 
 sample_values <- function(data, columns = names(data), n = 12L) {
@@ -153,7 +153,7 @@ review_context <- function(data, codebooks, mapping, decisions, rules, after_dat
 validate_ai_definitions <- function(definitions, codebooks) {
   if (is.null(definitions) || !nrow(definitions)) return(empty_codebook_records())
   required <- c(names(empty_codebook_records()), "quote")
-  if (!all(required %in% names(definitions))) stop("AI 정의의 필수 정보가 없습니다.", call. = FALSE)
+  if (!all(required %in% names(definitions))) stop("AI \uc815\uc758\uc758 \ud544\uc218 \uc815\ubcf4\uac00 \uc5c6\uc2b5\ub2c8\ub2e4.", call. = FALSE)
   out <- normalize_codebook_records(definitions)
   keep <- vapply(seq_len(nrow(out)), function(i) {
     row <- out[i, ]; if (nchar(row$quote) < 8L || nchar(row$quote) > 1000L || !nzchar(row$variable)) return(FALSE)

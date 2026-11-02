@@ -2,7 +2,7 @@
 # API keys and respondent-level records are never included in prompts.
 
 make_ai_request_preview <- function(data, codebooks, max_chars = 18000L) {
-  if (is.null(codebooks)) stop("코드북을 업로드해 주세요.", call. = FALSE)
+  if (is.null(codebooks)) stop("\ucf54\ub4dc\ubd81\uc744 \uc5c5\ub85c\ub4dc\ud574 \uc8fc\uc138\uc694.", call. = FALSE)
   codebook_rows <- head(codebooks$records, 240L)
   if (nrow(codebook_rows)) {
     codebook_rows[] <- lapply(codebook_rows, function(x) substr(as.character(x), 1L, 240L))
@@ -20,9 +20,9 @@ make_ai_request_preview <- function(data, codebooks, max_chars = 18000L) {
 }
 
 create_chat <- function(provider, api_key, model = "") {
-  if (!nzchar(trimws(api_key))) stop("API 키가 필요합니다.", call. = FALSE)
+  if (!nzchar(trimws(api_key))) stop("API \ud0a4\uac00 \ud544\uc694\ud569\ub2c8\ub2e4.", call. = FALSE)
   if (!requireNamespace("ellmer", quietly = TRUE)) {
-    stop("install.packages('ellmer')를 먼저 실행하세요.", call. = FALSE)
+    stop("install.packages('ellmer')\ub97c \uba3c\uc800 \uc2e4\ud589\ud558\uc138\uc694.", call. = FALSE)
   }
   model <- trimws(model)
   if (!nzchar(model)) model <- NULL  # Let ellmer choose the provider default.
@@ -51,7 +51,7 @@ create_chat <- function(provider, api_key, model = "") {
                                        credentials = creds, cache = "none", echo = "none"),
     gemini = ellmer::chat_google_gemini(system_prompt = prompt, model = model,
                                         api_key = api_key, echo = "none"),
-    stop("지원하지 않는 AI 제공업체입니다.", call. = FALSE)
+    stop("\uc9c0\uc6d0\ud558\uc9c0 \uc54a\ub294 AI \uc81c\uacf5\uc5c5\uccb4\uc785\ub2c8\ub2e4.", call. = FALSE)
   )
 }
 
