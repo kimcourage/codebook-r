@@ -68,6 +68,13 @@ details.compact-details { background: transparent; padding: 10px 0; border-width
 .work-list .checkbox input { margin-top: 5px; accent-color: var(--accent); }
 .list-tools { border-top: 1px solid var(--line); padding-top: 12px; }
 .list-tools > div { display: inline-block; }
+.bin-range { border: 1px solid var(--line); border-radius: 8px; padding: 12px; margin: 16px 0; background: var(--surface); min-width: 0; }
+.bin-range legend { width: auto; padding: 0 6px; margin: 0; border: 0; color: var(--accent-dark); font-size: 14px; font-weight: 650; }
+.bin-range .row { margin: 0 -6px; }
+.bin-range .row > div { padding: 0 6px; }
+.work-list .bin-range .checkbox, .work-list .bin-range .checkbox:has(input:checked) { border: 0; background: transparent; }
+.work-list .bin-range .checkbox label { padding-top: 0; padding-bottom: 4px; }
+#bin_preview .table th { white-space: normal; }
 .review-card > .table-wrapper { max-height: 250px; }
 .preview-box { background: var(--soft); }
 .privacy-box { padding: 12px; background: var(--soft); border-radius: 6px; margin: 12px 0; }

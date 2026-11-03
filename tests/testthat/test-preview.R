@@ -35,10 +35,10 @@ testthat::test_that("label changes and declared missing normalization are explic
   p <- preview_rules(d, r)
   x <- apply_approved_rules(d, r)$data$q
   testthat::expect_equal(p$report$n_affected, c(1L, 1L))
-  testthat::expect_match(p$report$note[[2]], "값 라벨은 제거", fixed = TRUE)
+  testthat::expect_match(p$report$note[[2]], "값 라벨을 범주명", fixed = TRUE)
   testthat::expect_identical(attr(x, "label"), "Question")
   testthat::expect_true(is.factor(x))
-  testthat::expect_identical(levels(x), "1")
+  testthat::expect_identical(levels(x), "yes")
   testthat::expect_true(is.na(x[[2]]))
 })
 

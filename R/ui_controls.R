@@ -1,3 +1,12 @@
+operation_choices <- function(additional = FALSE) {
+  choices <- c("\uacb0\uce21\uac12 \ucc98\ub9ac" = "set_na", "\uc5ed\ucf54\ub529" = "reverse",
+    "\ubc94\uc8fc\ud615 \ubcc0\ud658" = "factor", "\ud569\uc131\ubcc0\uc218 \ub9cc\ub4e4\uae30" = "composite", "\uc911\uc2ec\ud654" = "center",
+    "\ud45c\uc900\ud654 (z\uc810\uc218)" = "standardize", "wide \u2192 long" = "long", "long \u2192 wide" = "wide", "\ucf54\ub4dc\ubd81 \ub77c\ubca8 \ud655\uc778" = "labels"
+  )
+  if (additional) choices <- c(choices, "\uac12 \uad6c\uac04\uc73c\ub85c \ubc94\uc8fc\ud615 \ub9cc\ub4e4\uae30" = "binning")
+  choices
+}
+
 # Existing input contracts are preserved here; layout lives in app_ui.R.
 ui_ai_controls <- function() tagList(
   p(class = "hint", "AI\uac00 \ucf54\ub4dc\ubd81\uc758 \ubcc0\uc218 \uc815\uc758\uc640 \ucc98\ub9ac \uc9c0\uce68\uc744 \uc77d\uc2b5\ub2c8\ub2e4. \uc6d0\ubb38\uacfc \uc2e4\uc81c \uc790\ub8cc\ub97c \ub300\uc870\ud55c \ub4a4 \uc801\uc6a9\ud560 \ub0b4\uc6a9\uc744 \uc120\ud0dd\ud558\uc138\uc694."),
@@ -17,16 +26,15 @@ ui_ai_controls <- function() tagList(
 ui_operation_editor <- function() tagList(
   selectInput("edit_rule", "\ud3b8\uc9d1\ud560 \uc791\uc5c5", choices = c("\uc0c8 \uc791\uc5c5" = "new")),
   p(class = "hint", textOutput("editor_context_status")),
-  selectInput("manual_op", "\uc791\uc5c5 \uc885\ub958", c("\uacb0\uce21\uac12 \ucc98\ub9ac" = "set_na", "\uc5ed\ucf54\ub529" = "reverse",
-    "\ubc94\uc8fc\ud615 \ubcc0\ud658" = "factor", "\ud569\uc131\ubcc0\uc218 \ub9cc\ub4e4\uae30" = "composite", "\uc911\uc2ec\ud654" = "center",
-    "\ud45c\uc900\ud654 (z\uc810\uc218)" = "standardize", "wide \u2192 long" = "long", "long \u2192 wide" = "wide", "\ucf54\ub4dc\ubd81 \ub77c\ubca8 \ud655\uc778" = "labels")),
+  selectInput("manual_op", "\uc791\uc5c5 \uc885\ub958", operation_choices()),
   conditionalPanel("['set_na','reverse','factor'].includes(input.manual_op)",
     selectInput("manual_var", "\ubcc0\uc218", choices = character())),
   conditionalPanel("input.manual_op === 'set_na'",
     textInput("manual_codes", "\uacb0\uce21\uc73c\ub85c \ubc14\uafc0 \ucf54\ub4dc", "", placeholder = "\uc608: 9, 99")),
   conditionalPanel("input.manual_op === 'reverse'", fluidRow(
     column(6, numericInput("manual_min", "\ucc99\ub3c4 \ucd5c\uc18c\uac12", 1)), column(6, numericInput("manual_max", "\ucc99\ub3c4 \ucd5c\ub300\uac12", 5)))),
-  conditionalPanel("input.manual_op === 'factor'", p(class = "hint", "\uad00\uce21 \ucf54\ub4dc\ub97c \ubc94\uc8fc\ub85c \ubc14\uafc9\ub2c8\ub2e4. \ubc94\uc8fc \uc21c\uc11c\uc640 \uac12 \ub77c\ubca8\uc740 \uc9c0\uc815\ud558\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4.")),
+  conditionalPanel("input.manual_op === 'factor'", p(class = "hint", "\ucf54\ub4dc\ubd81\uc758 \uc751\ub2f5\uba85\uc744 \ubc94\uc8fc\uba85\uc73c\ub85c \uc0ac\uc6a9\ud574 factor\ub85c \ubc14\uafc9\ub2c8\ub2e4. \uc608: 1 \u2192 \ub0a8\uc131, 2 \u2192 \uc5ec\uc131. \ub77c\ubca8\uc774 \uc5c6\ub294 \uac12\uc740 \ucf54\ub4dc\ub97c \ubc94\uc8fc\uba85\uc73c\ub85c \uc720\uc9c0\ud569\ub2c8\ub2e4. \ubc94\uc8fc \uac04 \uc21c\uc11c\ub294 \uc9c0\uc815\ud558\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4.")),
+  conditionalPanel("input.manual_op === 'binning'", ui_binning_controls()),
   conditionalPanel("input.manual_op === 'composite'",
     selectInput("composite_items", "\ud569\uce60 \ubb38\ud56d", choices = character(), multiple = TRUE),
     fluidRow(column(6, selectInput("composite_method", "\uacc4\uc0b0 \ubc29\ubc95", c("\ud3c9\uade0" = "mean", "\ud569\uacc4" = "sum"))),
@@ -47,7 +55,7 @@ ui_operation_editor <- function() tagList(
       conditionalPanel("input.manual_op === 'standardize'", numericInput("fixed_scale", "\ub098\ub20c \ud45c\uc900\ud3b8\ucc28", 1, min = 0)),
       p(class = "hint", "\uc804\uccb4 \uc790\ub8cc\uc5d0 \uac19\uc740 \uae30\uc900\uac12\uc744 \uc801\uc6a9\ud569\ub2c8\ub2e4. \uc9d1\ub2e8\ubcc4\ub85c \ub2e4\ub978 \uac12\uc744 \uc9c1\uc811 \uc785\ub825\ud558\ub294 \ubc29\uc2dd\uc740 \uc9c0\uc6d0\ud558\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4.")),
     p(class = "hint", "\uc911\uc2ec\ud654\ub294 \ud3c9\uade0\uc744 \ube8d\ub2c8\ub2e4. z\uc810\uc218\ub294 \ud3c9\uade0\uc744 \ube80 \ub4a4 \ud45c\ubcf8 \ud45c\uc900\ud3b8\ucc28\ub85c \ub098\ub215\ub2c8\ub2e4. \uacb0\uce21\uc740 \uc81c\uc678\ud558\uba70, \ud604\uc7ac \uc790\ub8cc\uc5d0\uc11c \uacc4\uc0b0\ud560 \ub54c \uac01 \ud589\uc740 \uac19\uc740 \ube44\uc911\uc744 \uac16\uc2b5\ub2c8\ub2e4.")),
-  conditionalPanel("['composite','center','standardize'].includes(input.manual_op)",
+  conditionalPanel("['composite','center','standardize','binning'].includes(input.manual_op)",
     textInput("new_variable", "\uc0c8 \ubcc0\uc218 \uc774\ub984", "", placeholder = "\uc608: wellbeing_mean"),
     p(class = "hint", "\uc6d0\ub798 \ubcc0\uc218\ub294 \uc720\uc9c0\ud569\ub2c8\ub2e4. \uc774\ubbf8 \uc788\ub294 \ubcc0\uc218 \uc774\ub984\uc740 \uc4f8 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4.")),
   conditionalPanel("['long','wide'].includes(input.manual_op)",

@@ -154,7 +154,7 @@ codebookr_ui <- function() {
             p(class = "hint", "\ubcf4\ub958\ud55c \uc791\uc5c5\uc774\ub098 \uc77d\uc9c0 \ubabb\ud55c \uc9c0\uce68\uc740 \ubd84\uc11d \uc804\uc5d0 \ud655\uc778\ud558\uc138\uc694.")),
           conditionalPanel("output.ui_has_base === 'yes'",
             div(class = "next-step additional-section", h3("\ucd94\uac00\ub85c \uc815\ub9ac\ud560 \ub0b4\uc6a9\uc774 \uc788\ub098\uc694?"),
-              p(class = "hint", "\ud569\uc131\ubcc0\uc218, \uc911\uc2ec\ud654, \ud45c\uc900\ud654, \uc790\ub8cc \ud615\ud0dc \ubcc0\ud658\uc744 \uc774\uc5b4\uc11c \ud560 \uc218 \uc788\uc2b5\ub2c8\ub2e4."),
+              p(class = "hint", "\uad6c\uac04\ubcc4 \ubc94\uc8fc\ud615 \ubcc0\ud658, \ud569\uc131\ubcc0\uc218, \uc911\uc2ec\ud654, \ud45c\uc900\ud654, \uc790\ub8cc \ud615\ud0dc \ubcc0\ud658\uc744 \uc774\uc5b4\uc11c \ud560 \uc218 \uc788\uc2b5\ub2c8\ub2e4."),
               p(class = "hint", textOutput("base_status")), uiOutput("base_controls")))
         )
       ),

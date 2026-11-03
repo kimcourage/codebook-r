@@ -23,6 +23,7 @@ classify_header <- function(x) {
   if (grepl("^(\ube44\uace0|\uc8fc\uc11d|\ucc38\uace0|note|notes|\uacb0\uce21\ucc98\ub9ac|\uacb0\uce21\ucf54\ub4dc)$", x)) return("note")
   if (grepl("^(\ucd5c\uc18c|\ucd5c\uc18c\uac12|\ud558\ud55c|minimum|min|lower)$", x)) return("minimum")
   if (grepl("^(\ucd5c\ub300|\ucd5c\ub300\uac12|\uc0c1\ud55c|maximum|max|upper)$", x)) return("maximum")
+  if (grepl("^(\uce21\uc815\uc218\uc900|\uce21\uc815\ucc99\ub3c4|\uc790\ub8cc\ud615|\ubcc0\uc218\uc720\ud615|\ubcc0\uc218\ud0c0\uc785|measurement|measurementlevel|measure|levelofmeasurement|type|variabletype)$", x)) return("measurement")
   ""
 }
 
@@ -57,8 +58,8 @@ parse_tabular_codebook <- function(table, source_file, sheet = "", max_rows = 50
   }
   header_row <- candidates[which.max(scores)]
   h <- headers[[which.max(scores)]]
-  positions <- setNames(rep(NA_integer_, 7L),
-                        c("variable", "label", "value_code", "value_label", "note", "minimum", "maximum"))
+  positions <- setNames(rep(NA_integer_, 8L),
+                        c("variable", "label", "value_code", "value_label", "note", "minimum", "maximum", "measurement"))
   for (nm in names(positions)) {
     matches <- which(h == nm)
     if (length(matches)) positions[[nm]] <- matches[[1]]
@@ -69,6 +70,7 @@ parse_tabular_codebook <- function(table, source_file, sheet = "", max_rows = 50
   }
   previous_var <- ""
   previous_label <- ""
+  previous_measurement <- ""
   if (header_row >= nrow(raw)) {
     return(list(records = out, excerpt = excerpt, source_lines = source_lines, detected = TRUE, note = paste("\ud5e4\ub354 \ub4a4\uc5d0 \ubcc0\uc218 \uae30\ub85d\uc774 \uc5c6\uc2b5\ub2c8\ub2e4.", note)))
   }
@@ -78,20 +80,23 @@ parse_tabular_codebook <- function(table, source_file, sheet = "", max_rows = 50
     code <- val(i, "value_code")
     code_lab <- val(i, "value_label")
     note <- val(i, "note")
+    measurement <- val(i, "measurement")
     # Some worksheets use merged cells: carry the previous variable only
     # when this row explicitly contains a response code.
     if (!nzchar(v) && nzchar(code)) {
       v <- previous_var
       if (!nzchar(lab)) lab <- previous_label
+      if (!nzchar(measurement)) measurement <- previous_measurement
     }
     if (nzchar(val(i, "variable"))) {
       previous_var <<- v
       previous_label <<- lab
+      previous_measurement <<- measurement
     }
     if (!nzchar(v)) return(NULL)
     data.frame(
       variable = v, label = lab, value_code = code,
-      value_label = code_lab, note = note, source_file = source_file,
+      value_label = code_lab, note = paste(c(measurement, note)[nzchar(c(measurement, note))], collapse = "; "), source_file = source_file,
       minimum = val(i, "minimum"), maximum = val(i, "maximum"), quote = source_lines$text[[i]], origin = "codebook",
       source_loc = if (nzchar(sheet)) sprintf("%s!row %d", sheet, i) else sprintf("row %d", i),
       stringsAsFactors = FALSE
@@ -126,7 +131,7 @@ parse_pdf_codebook <- function(path, source_file, max_pages = 80L) {
       if (!grepl("^[A-Za-z][A-Za-z0-9_.]{0,79}$", v)) next
       out <- rbind(out, data.frame(
         variable = v, label = parts[[2]], value_code = parts[[3]],
-        value_label = parts[[4]], note = "", source_file = source_file,
+        value_label = parts[[4]], note = if (length(parts) >= 5L) parts[[5]] else "", source_file = source_file,
         source_loc = sprintf("page %d", p), stringsAsFactors = FALSE
       ))
     }

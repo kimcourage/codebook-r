@@ -69,7 +69,7 @@ variable_metadata <- function(data) {
     x <- data[[nm]]
     lab <- attr(x, "label", exact = TRUE)
     if (is.null(lab) || length(lab) != 1L) lab <- ""
-    labels <- attr(x, "labels", exact = TRUE)
+    labels <- factor_value_labels(x)
     value_labels <- if (length(labels)) paste(head(paste0(unname(labels), "=", names(labels)), 20L), collapse = "; ") else ""
     if (length(labels) > 20L) value_labels <- paste0(value_labels, "; \u2026 (\ucd1d ", length(labels), "\uac1c)")
     user_missing <- c(attr(x, "na_values", exact = TRUE), attr(x, "na_range", exact = TRUE))

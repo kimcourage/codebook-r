@@ -50,7 +50,8 @@ codebook_conflicts <- function(rows) {
 
 canonical_codebook_codes <- function(records, data) {
   for (v in intersect(unique(records$variable), names(data))) {
-    if (!is.numeric(data[[v]]) || inherits(data[[v]], c("Date", "POSIXt", "difftime"))) next
+    if ((!is.numeric(data[[v]]) && !isTRUE(attr(data[[v]], "codebookr_numeric", exact = TRUE))) ||
+        inherits(data[[v]], c("Date", "POSIXt", "difftime"))) next
     at <- which(records$variable == v & nzchar(records$value_code))
     numeric_codes <- suppressWarnings(as.numeric(records$value_code[at]))
     valid <- is.finite(numeric_codes)
@@ -78,6 +79,10 @@ codebook_candidates <- function(data, codebooks, mapping) {
     candidate <- new_research_rule("labels", p, "\ucf54\ub4dc\ubd81\uc758 \ubcc0\uc218 \uc124\uba85\uacfc \uac12 \ub77c\ubca8 \uc801\uc6a9")
     candidate$source <- "codebook"
     candidate$evidence <- paste(unique(paste(rows$source_file, rows$source_loc, sep = " / ")), collapse = "; ")
+    if (codebook_requests_factor(rows) && !is.factor(data[[v]])) {
+      candidate$operation <- "factor"
+      candidate$reason <- "\ucf54\ub4dc\ubd81\uc758 \ubc94\uc8fc\ud615 \ucc98\ub9ac \uc9c0\uce68\uacfc \uc751\ub2f5\uba85 \uc801\uc6a9"
+    }
     out <- append_rule_candidates(out, candidate, data)
   }
   out
@@ -89,12 +94,16 @@ codebook_comparison <- function(data, codebooks, mapping, decisions = NULL) {
     defs <- r[r$variable == v, , drop = FALSE]; issues <- character()
     if (!nrow(defs)) issues <- "\uc5f0\uacb0\ub41c \ucf54\ub4dc\ubd81 \uc815\uc758\uac00 \uc5c6\uc2b5\ub2c8\ub2e4."
     conflicts <- codebook_conflicts(defs)
+    category_names <- unique(defs[nzchar(defs$value_code) & nzchar(defs$value_label), c("value_code", "value_label"), drop = FALSE])
+    if (codebook_requests_factor(defs) && anyDuplicated(category_names$value_label)) {
+      issues <- c(issues, "\uc11c\ub85c \ub2e4\ub978 \ucf54\ub4dc\uc5d0 \uac19\uc740 \ubc94\uc8fc\uba85\uc774 \uc788\uc2b5\ub2c8\ub2e4. \ubc94\uc8fc\ud615 \ubcc0\ud658 \uc804\uc5d0 \ucf54\ub4dc\ubd81\uc758 \uc774\ub984\uc744 \uad6c\ubd84\ud574 \uc8fc\uc138\uc694.")
+    }
     if (length(conflicts)) issues <- c(issues, paste("\ucf54\ub4dc \uc815\uc758\uac00 \uc11c\ub85c \ub2e4\ub985\ub2c8\ub2e4:", paste(conflicts, collapse = ", ")))
     descriptions <- unique(defs$label[nzchar(defs$label)])
     if (length(descriptions) > 1L) issues <- c(issues, "\ubcc0\uc218 \uc124\uba85\uc774 \uc11c\ub85c \ub2e4\ub985\ub2c8\ub2e4.")
     codes <- unique(defs$value_code[nzchar(defs$value_code)])
     missing_codes <- unlist(lapply(heuristic_missing_rules(defs, data)$values, split_codes))
-    observed <- raw_codes(data[[v]]); valid <- !is.na(observed)
+    observed <- factor_source_codes(data[[v]]); valid <- !is.na(observed)
     # A list of missing codes alone is not an exhaustive enumeration of valid codes.
     has_categories <- any(!codes %in% missing_codes)
     unknown <- if (has_categories) unique(observed[valid & !observed %in% codes]) else character()
@@ -105,8 +114,8 @@ codebook_comparison <- function(data, codebooks, mapping, decisions = NULL) {
     if (length(lo) == 1L || length(hi) == 1L) {
       lower <- if (length(lo) == 1L) suppressWarnings(as.numeric(lo)) else -Inf
       upper <- if (length(hi) == 1L) suppressWarnings(as.numeric(hi)) else Inf
-      if (is.na(lower) || is.na(upper) || lower > upper) issues <- c(issues, "\ud5c8\uc6a9 \ubc94\uc704\ub97c \uc22b\uc790\ub85c \ud574\uc11d\ud558\uc9c0 \ubabb\ud588\uc2b5\ub2c8\ub2e4.") else if (!is.numeric(data[[v]])) issues <- c(issues, "\uc22b\uc790 \ubc94\uc704\uac00 \uc815\uc758\ub418\uc5b4 \uc788\uc73c\ub098 \uc790\ub8cc\ub294 \uc22b\uc790\ud615\uc774 \uc544\ub2d9\ub2c8\ub2e4.") else {
-        x <- as.numeric(data[[v]]); eligible <- !is.na(data[[v]]) & !observed %in% missing_codes
+      if (is.na(lower) || is.na(upper) || lower > upper) issues <- c(issues, "\ud5c8\uc6a9 \ubc94\uc704\ub97c \uc22b\uc790\ub85c \ud574\uc11d\ud558\uc9c0 \ubabb\ud588\uc2b5\ub2c8\ub2e4.") else if (!is.numeric(data[[v]]) && !isTRUE(attr(data[[v]], "codebookr_numeric", exact = TRUE))) issues <- c(issues, "\uc22b\uc790 \ubc94\uc704\uac00 \uc815\uc758\ub418\uc5b4 \uc788\uc73c\ub098 \uc790\ub8cc\ub294 \uc22b\uc790\ud615\uc774 \uc544\ub2d9\ub2c8\ub2e4.") else {
+        x <- as.numeric(observed); eligible <- !is.na(data[[v]]) & !observed %in% missing_codes
         outside <- sum(eligible & (x < lower | x > upper), na.rm = TRUE)
         if (outside) issues <- c(issues, paste0("\ud5c8\uc6a9 \ubc94\uc704 \ubc16 \uac12 ", outside, "\uac1c. \uc790\ub3d9\uc73c\ub85c \ubc14\uafb8\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4."))
       }

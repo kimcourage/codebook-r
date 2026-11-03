@@ -11,6 +11,7 @@ codebookr_server <- function(input, output, session) {
   book_feedback <- shiny::reactiveVal("")
   rule_feedback <- shiny::reactiveVal("")
   execution_feedback <- shiny::reactiveVal("")
+  bin_rows_state <- shiny::reactiveVal(empty_bin_rows())
   loaded_import_options <- shiny::reactiveVal(list())
   data_name <- shiny::reactiveVal("")
   source_revision <- shiny::reactiveVal(0L)
@@ -242,6 +243,9 @@ codebookr_server <- function(input, output, session) {
     key <- input$edit_rule
     index <- match(key, rule_keys())
     if (identical(key, "new")) {
+      bin_rows_state(empty_bin_rows())
+      shiny::updateSelectInput(session, "bin_outside", selected = "error")
+      shiny::updateCheckboxInput(session, "bin_ordered", value = FALSE)
       shiny::updateSelectInput(session, "manual_op", selected = "set_na")
       shiny::updateTextInput(session, "manual_codes", value = "")
       shiny::updateNumericInput(session, "manual_min", value = 1)
@@ -259,7 +263,12 @@ codebookr_server <- function(input, output, session) {
       p <- rule_parameters(row)
       if (row$operation %in% research_operations) {
         if (!is.null(p$output)) shiny::updateTextInput(session, "new_variable", value = p$output)
+        if (row$operation == "binning") {
+          bin_rows_state(p$bins)
+          shiny::updateCheckboxInput(session, "bin_ordered", value = p$ordered)
+        }
         values <- switch(row$operation,
+          binning = list(bin_variable = p$input, bin_outside = p$outside),
           composite = list(composite_items = p$inputs, composite_method = p$method),
           center = , standardize = list(scale_variable = p$input, scale_scope = p$scope,
             scale_groups = p$groups, scale_reference = p$reference, reference_column = p$reference_column),
@@ -287,9 +296,10 @@ codebookr_server <- function(input, output, session) {
     shiny::req(dataset())
     tryCatch({
       op <- input$manual_op
+      if (op == "binning" && workspace_mode() != "additional") stop("\uac12 \uad6c\uac04\uc73c\ub85c \ubc94\uc8fc\ud615 \ub9cc\ub4e4\uae30\ub294 \uacb0\uacfc \ud654\uba74\uc758 \ucd94\uac00 \uc804\ucc98\ub9ac\uc5d0\uc11c \uc0ac\uc6a9\ud560 \uc218 \uc788\uc2b5\ub2c8\ub2e4.", call. = FALSE)
       if (workspace_mode() == "additional" && is.null(current_base())) stop("\ucf54\ub4dc\ubd81 \uae30\uc900 \uacb0\uacfc\ub97c \uba3c\uc800 \ub2e4\uc2dc \ud655\uc778\ud558\uace0 \uc2e4\ud589\ud574 \uc8fc\uc138\uc694.", call. = FALSE)
       if (op == "labels") stop("\ub77c\ubca8 \uc815\uc758\ub294 \ubcc0\uc218 \uc5f0\uacb0\uacfc \ucf54\ub4dc\ubd81 \uc6d0\ubb38\uc5d0\uc11c \ud655\uc778\ud574 \uc8fc\uc138\uc694. \uc81c\uc548\uc744 \uc81c\uc678\ud558\uac70\ub098 \ucf54\ub4dc\ubd81\uc744 \uace0\uce5c \ub4a4 \ub2e4\uc2dc \uc77d\uc744 \uc218 \uc788\uc2b5\ub2c8\ub2e4.", call. = FALSE)
-      candidate <- if (op %in% research_operations) research_rule_from_inputs(input) else data.frame(
+      candidate <- if (op %in% research_operations) research_rule_from_inputs(input, bin_rows_state()) else data.frame(
         id = 1L, variable = input$manual_var, operation = op,
         values = if (op == "set_na") trimws(input$manual_codes) else "",
         minimum = if (op == "reverse") input$manual_min else NA_real_,
@@ -299,6 +309,7 @@ codebookr_server <- function(input, output, session) {
       )
       if (!nzchar(trimws(candidate$reason[[1]]))) stop("\ubcc0\uacbd \uadfc\uac70\ub97c \uc785\ub825\ud574 \uc8fc\uc138\uc694.", call. = FALSE)
       context <- editor_context()
+      if (op == "factor") candidate <- with_codebook_factor_labels(candidate, dataset(), codebooks(), mapping())
       if (nzchar(context$error)) stop(paste("\uc55e\uc120 \uc791\uc5c5\uc744 \uba3c\uc800 \uc218\uc815\ud574 \uc8fc\uc138\uc694:", context$error), call. = FALSE)
       check_rule(candidate, context$data)
       editor <- input$edit_rule
@@ -387,6 +398,7 @@ codebookr_server <- function(input, output, session) {
         }
         push_undo()
         updated <- append_rule_candidates(rules(), codebook_candidates(dataset(), codebooks(), mapping()), dataset())
+        proposed <- with_codebook_factor_labels(proposed, dataset(), codebooks(), mapping())
         updated <- append_rule_candidates(updated, proposed, dataset())
         n_added <- nrow(updated) - nrow(rules())
         if (n_added > 0L) set_rules(updated)
@@ -477,7 +489,11 @@ codebookr_server <- function(input, output, session) {
     previously_checked <<- input$approved_rules
     if (length(added)) {
       i <- match(tail(added, 1L), rule_keys())
-      if (!is.na(i) && rules()$variable[[i]] %in% names(dataset())) shiny::updateSelectInput(session, "review_variable", selected = rules()$variable[[i]])
+      if (!is.na(i)) {
+        target <- rules()$variable[[i]]
+        if (rules()$operation[[i]] == "binning") target <- rule_parameters(rules()[i, , drop = FALSE])$input
+        if (target %in% names(dataset())) shiny::updateSelectInput(session, "review_variable", selected = target)
+      }
     }
     result(NULL) # Prevent stale output after selection changes.
     execution_feedback("")
@@ -547,6 +563,7 @@ codebookr_server <- function(input, output, session) {
     contentType = "application/zip"
   )
   eval(codebookr_review_bindings, envir = environment())
+  eval(codebookr_binning_bindings, envir = environment())
   eval(codebookr_ui_bindings, envir = environment())
 }
 

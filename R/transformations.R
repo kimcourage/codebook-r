@@ -1,5 +1,5 @@
 # Versioned, structured research operations. Parameters are data, never R code.
-research_operations <- c("composite", "center", "standardize", "long", "wide", "labels")
+research_operations <- c("composite", "center", "standardize", "long", "wide", "labels", "binning")
 
 normalize_rules <- function(rules) {
   if (!"schema_version" %in% names(rules)) rules$schema_version <- rep(1L, nrow(rules))
@@ -26,7 +26,8 @@ rule_parameters <- function(rule) {
   rule <- normalize_rules(rule)
   if (length(rule$schema_version) != 1L || is.na(rule$schema_version) ||
       !rule$schema_version %in% c(1L, 2L)) stop("\uc9c0\uc6d0\ud558\uc9c0 \uc54a\ub294 \uc791\uc5c5 \ud615\uc2dd\uc785\ub2c8\ub2e4.", call. = FALSE)
-  if (!rule$operation[[1]] %in% research_operations) return(list())
+  if (!rule$operation[[1]] %in% c(research_operations, "factor")) return(list())
+  if (rule$operation[[1]] == "factor" && rule$schema_version == 1L) return(list())
   if (rule$schema_version != 2L) stop("\uc0c8 \uc791\uc5c5\uc758 \uc124\uc815 \ud615\uc2dd\uc774 \ub9de\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4.", call. = FALSE)
   p <- tryCatch(jsonlite::fromJSON(rule$parameters[[1]], simplifyVector = TRUE), error = function(e) NULL)
   if (!is.list(p)) stop("\uc791\uc5c5 \uc124\uc815\uc744 \uc77d\uc744 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4.", call. = FALSE)
@@ -120,11 +121,14 @@ long_mapping <- function(data, p) {
 
 check_research_rule <- function(rule, data) {
   p <- rule_parameters(rule); op <- rule$operation[[1]]
-  if (op %in% c("composite", "center", "standardize")) {
+  if (op %in% c("composite", "center", "standardize", "binning")) {
     new_column(data, p$output)
     if (!identical(rule$variable[[1]], p$output)) stop("\uc791\uc5c5\uc758 \ucd9c\ub825 \ubcc0\uc218\uc640 \uc124\uc815\uc774 \uc77c\uce58\ud558\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4.", call. = FALSE)
   }
-  if (op == "labels") {
+  if (op == "binning") {
+    require_text(p$input, "\uc218\uce58\ud615 \ubcc0\uc218"); require_columns(data, p$input, "\uc218\uce58\ud615 \ubcc0\uc218")
+    binning_result(data[[p$input]], p)
+  } else if (op == "labels") {
     require_text(p$input, "\ubcc0\uc218"); require_columns(data, p$input, "\ubcc0\uc218")
     if (!identical(rule$variable[[1]], p$input) || !identical(p$output, p$input)) stop("\ub77c\ubca8\uc758 \ub300\uc0c1 \ubcc0\uc218\uac00 \ub2e4\ub985\ub2c8\ub2e4.", call. = FALSE)
     x <- data[[p$input]]
@@ -178,7 +182,12 @@ apply_research_rule <- function(data, rule) {
   check_research_rule(rule, data)
   p <- rule_parameters(rule); op <- rule$operation[[1]]; out <- data
   details <- list(); before <- 0L; note <- ""
-  if (op == "labels") {
+  if (op == "binning") {
+    binned <- binning_result(data[[p$input]], p)
+    out[[p$output]] <- binned$value
+    before <- binned$missing_before; after <- binned$missing_after
+    affected <- binned$n_affected; details <- binned$details; note <- binned$note
+  } else if (op == "labels") {
     x <- data[[p$input]]; before <- sum(is.na(x)); after <- before
     codes <- if (is.numeric(x)) as.numeric(p$codes) else as.character(p$codes)
     labels <- stats::setNames(codes, as.character(p$labels))
@@ -283,6 +292,7 @@ rule_io <- function(rule) {
   p <- rule_parameters(rule)
   if (op %in% c("long", "wide")) return(list(reads = character(), writes = character(), all = TRUE))
   if (op == "labels") return(list(reads = p$input, writes = p$input, all = FALSE))
+  if (op == "binning") return(list(reads = p$input, writes = p$output, all = FALSE))
   list(reads = if (op == "composite") p$inputs else unique(c(p$input, p$groups,
     if (p$reference == "subset") p$reference_column)), writes = p$output, all = FALSE)
 }
@@ -299,9 +309,10 @@ rule_contexts <- function(rules) {
   signatures
 }
 
-research_rule_from_inputs <- function(input) {
+research_rule_from_inputs <- function(input, bin_rows = empty_bin_rows()) {
   op <- input$manual_op
   p <- switch(op,
+    binning = bin_parameters_from_inputs(input, bin_rows),
     composite = list(inputs = as.character(input$composite_items), output = trimws(input$new_variable),
       method = input$composite_method, min_valid = input$composite_min),
     center = , standardize = list(input = input$scale_variable, output = trimws(input$new_variable),

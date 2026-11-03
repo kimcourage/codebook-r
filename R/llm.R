@@ -37,7 +37,7 @@ create_chat <- function(provider, api_key, model = "") {
     "nonresponse, refusal, don't know, or not applicable.",
     "Do NOT infer missingness from large numeric values alone.",
     "Propose reverse ONLY with explicit evidence of item direction and scale endpoints.",
-    "For factor, only change type; never invent value labels.",
+    "Propose factor for explicitly categorical variables. Return exact codebook value labels as definitions; the app binds them to factor levels. Never invent labels or infer categorical type merely from a small number of values.",
     "If evidence is insufficient, return an empty array.",
     "Every proposed variable must be in the dataset variable list.",
     "Do not write or execute code. Return structured rules only.",

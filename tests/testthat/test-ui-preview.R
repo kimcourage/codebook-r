@@ -20,7 +20,7 @@ testthat::test_that("label additions, replacements, removals and unchanged label
   testthat::expect_equal(shown[[3]], c("새 설명", "새이름", "없음", "추가", "유지"))
   testthat::expect_true(all(preview_label_changes(after, after, "q")$table[[4]] == "변경 없음"))
   removed <- preview_label_changes(d, data.frame(q = factor(1:4)), "q")$table
-  testthat::expect_equal(removed[[4]][-1], rep("제거", 3))
+  testthat::expect_equal(removed[[4]][grepl("^값 ", removed[[1]])], rep("제거", 3))
 })
 
 testthat::test_that("large label lists prioritize actual changes and disclose the display limit", {

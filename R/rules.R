@@ -52,6 +52,7 @@ check_rule <- function(rule, data) {
       stop("\uc5ed\ucf54\ub529\uc5d0\ub294 \uc22b\uc790 \ubcc0\uc218\uc640 \uc720\ud6a8\ud55c \ucd5c\uc18c/\ucd5c\ub300\uac12\uc774 \ud544\uc694\ud569\ub2c8\ub2e4.", call. = FALSE)
     }
   }
+  if (op == "factor") make_factor_result(data[[nm]], rule_parameters(rule))
   invisible(TRUE)
 }
 
@@ -86,11 +87,12 @@ apply_approved_rules <- function(data, rules) {
       codes <- split_codes(rule$values[[1]])
       # SPSS user-missing codes are preserved at import; an explicit rule can
       # normalize them to ordinary NA even though is.na(labelled_spss) is TRUE.
-      raw <- if (inherits(x, "haven_labelled")) unclass(x) else x
+      raw <- if (is.factor(x)) factor_source_codes(x) else if (inherits(x, "haven_labelled")) unclass(x) else x
       hit <- !is.na(raw) & (as.character(raw) %in% codes)
       n_affected <- sum(hit)
       details <- encode_parameters(list(original_codes = as.data.frame(table(as.character(raw[hit]))), source_variable = nm, affected_rows = data.frame(row = which(hit), code = as.character(raw[hit]), stringsAsFactors = FALSE)))
       x[hit] <- NA
+      if (is.factor(x)) x <- make_factor_result(x)$value
     } else if (op == "reverse") {
       min_value <- as.numeric(rule$minimum[[1]])
       max_value <- as.numeric(rule$maximum[[1]])
@@ -104,13 +106,13 @@ apply_approved_rules <- function(data, rules) {
       x <- ifelse(is.na(values), NA_real_, min_value + max_value - values)
     } else if (op == "factor") {
       n_affected <- sum(!is.na(x))
-      # In MVP this preserves observed codes, NOT codebook value labels.
-      values <- as.character(x)
-      values[is.na(x)] <- NA_character_
-      x <- factor(values, exclude = NA)
+      converted <- make_factor_result(x, rule_parameters(rule))
+      x <- converted$value
+      details <- encode_parameters(converted$details)
+      note <- converted$note
     }
     if (!op %in% research_operations) {
-      if (!is.null(variable_label)) attr(x, "label") <- variable_label
+      if (!is.null(variable_label) && op != "factor") attr(x, "label") <- variable_label
       cleaned[[nm]] <- x
       after <- sum(is.na(x))
     }
@@ -186,7 +188,7 @@ append_rule_candidates <- function(existing, candidates, data) {
 
 operation_label <- function(op) {
   labels <- c(set_na = "\uacb0\uce21\uac12 \ucc98\ub9ac", reverse = "\uc5ed\ucf54\ub529", factor = "\ubc94\uc8fc\ud615 \ubcc0\ud658",
-    composite = "\ud569\uc131\ubcc0\uc218", center = "\uc911\uc2ec\ud654", standardize = "\ud45c\uc900\ud654", long = "wide \u2192 long", wide = "long \u2192 wide", labels = "\ubcc0\uc218 \uc124\uba85\uacfc \uac12 \ub77c\ubca8")
+    binning = "\uad6c\uac04\ubcc4 \ubc94\uc8fc\ud615 \ubcc0\ud658", composite = "\ud569\uc131\ubcc0\uc218", center = "\uc911\uc2ec\ud654", standardize = "\ud45c\uc900\ud654", long = "wide \u2192 long", wide = "long \u2192 wide", labels = "\ubcc0\uc218 \uc124\uba85\uacfc \uac12 \ub77c\ubca8")
   unname(labels[op])
 }
 
@@ -195,13 +197,16 @@ rule_description <- function(rule) {
   if (op %in% research_operations) {
     p <- rule_parameters(rule)
     if (op == "labels") return(if (length(p$codes)) paste0("\ubcc0\uc218 \uc124\uba85\uacfc \uac12 \ub77c\ubca8 ", length(p$codes), "\uac1c \uc801\uc6a9") else "\ubcc0\uc218 \uc124\uba85 \uc801\uc6a9")
+    if (op == "binning") return(sprintf("%s \u2192 %s (%d\uac1c \uad6c\uac04\uc758 factor)", p$input, p$output, nrow(p$bins)))
     if (op == "composite") return(sprintf("%s\uc758 %s \u2192 %s (\ucd5c\uc18c %d\ubb38\ud56d)", paste(p$inputs, collapse = ", "), ifelse(p$method == "mean", "\ud3c9\uade0", "\ud569\uacc4"), p$output, p$min_valid))
     if (op %in% c("center", "standardize")) return(paste0(p$input, " \u2192 ", p$output, " (", if (p$scope == "all") "\uc804\uccb4" else paste(p$groups, collapse = ", "), " \uae30\uc900)"))
     return(if (op == "long") paste0(paste(p$columns, collapse = ", "), "\ub97c \ud589\uc73c\ub85c, \uc2dc\uc810: ", p$time) else paste0(paste(p$values, collapse = ", "), "\ub97c ", p$time, "\ubcc4 \uc5f4\ub85c"))
   }
   if (op == "set_na") return(paste0(rule$values[[1]], " \u2192 \uacb0\uce21\uac12"))
   if (op == "reverse") return(sprintf("%g\u2013%g \ubc94\uc704\uc5d0\uc11c \ubc29\ud5a5 \ubc18\uc804", rule$minimum[[1]], rule$maximum[[1]]))
-  "\uad00\uce21 \ucf54\ub4dc\ub97c \ubc94\uc8fc\ub85c \ubcc0\ud658"
+  p <- rule_parameters(rule)
+  if (op == "factor" && length(p$labels)) return(paste0("factor: ", paste(head(p$labels, 5L), collapse = ", ")))
+  "\ubc94\uc8fc\ud615(factor)\uc73c\ub85c \ubcc0\ud658"
 }
 
 rule_table_display <- function(rules, selected_keys = character(), keys = character()) {
@@ -251,8 +256,7 @@ preview_rules <- function(data, rules) {
         row$status <- "\uc2e4\ud589 \uac00\ub2a5"
         notices <- step$audit$note[nzchar(step$audit$note)]
         if (row$n_affected == 0L) notices <- c(notices, "\uc801\uc6a9 \ub300\uc0c1\uc774 \uc5c6\uc2b5\ub2c8\ub2e4. \ubcc0\uc218\uc640 \ucf54\ub4dc \uac12\uc744 \ud655\uc778\ud574 \uc8fc\uc138\uc694.")
-        if (rule$operation[[1]] == "factor") notices <- c(notices, "\uc21c\uc11c \uc5c6\ub294 \ubc94\uc8fc\ud615\uc785\ub2c8\ub2e4. \ucf54\ub4dc\ubd81 \uac12 \ub77c\ubca8\uc740 \uc790\ub3d9 \uc801\uc6a9\ud558\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4.")
-        if (rule$operation[[1]] %in% c("reverse", "factor") && length(attr(before, "labels", exact = TRUE))) {
+        if (rule$operation[[1]] == "reverse" && length(attr(before, "labels", exact = TRUE))) {
           notices <- c(notices, "\uae30\uc874 \uac12 \ub77c\ubca8\uc740 \uc81c\uac70\ub429\ub2c8\ub2e4. \ubcc0\uc218 \uc124\uba85\uc740 \uc720\uc9c0\ud569\ub2c8\ub2e4.")
         }
         row$note <- paste(notices, collapse = " ")

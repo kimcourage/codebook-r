@@ -13,7 +13,7 @@ preview_label_changes <- function(before, after, variable, limit = 100L) {
     if (length(label) != 1L || is.na(label) || !nzchar(label)) "" else as.character(label)
   }
   labels_by_code <- function(x) {
-    labels <- attr(x, "labels", exact = TRUE)
+    labels <- factor_value_labels(x)
     if (!length(labels)) return(stats::setNames(character(), character()))
     codes <- as.character(unname(labels))
     codes[is.na(codes)] <- "NA"
@@ -31,6 +31,11 @@ preview_label_changes <- function(before, after, variable, limit = 100L) {
   rows <- row("\ubcc0\uc218 \uc124\uba85", if (nzchar(old_description)) old_description else "\uc5c6\uc74c",
     if (nzchar(new_description)) new_description else "\uc5c6\uc74c",
     if (identical(old_description, new_description)) "\ubcc0\uacbd \uc5c6\uc74c" else "\ubcc0\uacbd")
+  if (is.factor(old) || is.factor(new)) {
+    old_type <- paste(class(old), collapse = "/"); new_type <- paste(class(new), collapse = "/")
+    rows <- rbind(row("\uc790\ub8cc\ud615", old_type, new_type,
+      if (identical(old_type, new_type)) "\ubcc0\uacbd \uc5c6\uc74c" else "\ubcc0\uacbd"), rows)
+  }
   old_labels <- labels_by_code(old); new_labels <- labels_by_code(new)
   codes <- union(names(old_labels), names(new_labels))
   note <- ""

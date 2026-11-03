@@ -64,6 +64,9 @@ codebookr_review_bindings <- quote({
     old <- shiny::isolate(input$review_variable)
     shiny::updateSelectInput(session, "review_variable", choices = choices,
       selected = if (length(old) == 1L && old %in% choices) old else head(choices, 1L))
+  })
+  shiny::observe({
+    d <- dataset(); choices <- if (is.null(d)) character() else names(d)
     for (id in c("raw_columns", "result_columns")) {
       values <- if (id == "result_columns" && !is.null(current_result())) names(current_result()$applied$data) else choices
       selected <- intersect(shiny::isolate(input[[id]]), values)
