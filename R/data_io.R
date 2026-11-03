@@ -56,7 +56,7 @@ read_dataset <- function(path, original_name = basename(path), csv_encoding = "U
     stop("\ubcc0\uc218\uba85\uc774 \ube44\uc5b4 \uc788\uac70\ub098 \uc911\ubcf5\ub418\uc5b4 \uc788\uc2b5\ub2c8\ub2e4. \uc6d0\uc790\ub8cc\uc5d0\uc11c \uc218\uc815\ud574 \uc8fc\uc138\uc694.", call. = FALSE)
   }
   unsupported <- nms[vapply(data, function(x) !is.atomic(x) || !is.null(dim(x)), logical(1))]
-  if (length(unsupported)) stop(paste("\ubaa9\ub85d\u00b7\ud589\ub82c \ud615\ud0dc\uc758 \uc5f4\uc740 \uc9c0\uc6d0\ud558\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4:",
+  if (length(unsupported)) stop(paste("\ubaa9\ub85d\uc774\ub098 \ud589\ub82c \ud615\ud0dc\uc758 \uc5f4\uc740 \uc9c0\uc6d0\ud558\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4:",
                                       paste(unsupported, collapse = ", ")), call. = FALSE)
   data
 }

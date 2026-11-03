@@ -58,7 +58,7 @@ testthat::test_that("Stata labels and tagged missing values survive import", {
 testthat::test_that("unsupported RDS columns and duplicate names fail clearly", {
   path <- tempfile(fileext = ".rds")
   saveRDS(data.frame(id = 1:2, nested = I(list(1:2, 3:4))), path)
-  testthat::expect_error(read_dataset(path), "목록·행렬")
+  testthat::expect_error(read_dataset(path), "목록이나 행렬")
   d <- data.frame(a = 1, b = 2); names(d) <- c("q", "q")
   saveRDS(d, path)
   testthat::expect_error(read_dataset(path), "중복")

@@ -547,5 +547,6 @@ codebookr_server <- function(input, output, session) {
     contentType = "application/zip"
   )
   eval(codebookr_review_bindings, envir = environment())
+  eval(codebookr_ui_bindings, envir = environment())
 }
 
